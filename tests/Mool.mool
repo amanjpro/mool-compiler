@@ -1,0 +1,21 @@
+class Circle(x0: int, y0: int, r0: int) {
+	var x: int;
+	var y: int;
+	var r: int;
+	init {
+		x = x0;
+		y=y0;
+		r= r0;
+	}
+	method int resize(n: int) { r = n * r; }
+}
+
+class Main(){
+	static void main() {
+		var s1: Circle = CT(new Circle(3, 5, 10), true);
+		var s2: Circle = new Circle(0, 1, CT(4, false));
+		s1.resize(2);
+		s2.resize(3);
+		s3 = s2
+	}
+}
