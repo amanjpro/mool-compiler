@@ -23,8 +23,8 @@ import _root_.ch.usi.inf.l3.moolc.ast._
 import io.Source
 
 /*
- * # vs is string, vb is bool, vn is number, [v] is list and C:p is object
- * v = null | vs | vb | vn | [v] | C:p
+ * # vs is string, vb is bool, vn is number and C:p is object
+ * v = null | vs | vb | vn | C:p
  * type = int | bool | str | C
  * Prog = CD Prog | epsilon
  * params = param | param params2 , param  | epsilon
@@ -33,7 +33,10 @@ import io.Source
  * vars = var x: type; vars | epsilon
  * CD = class C(params) {vars init{e} methods}
  * mod = static | method
- * methods = mod m(params) {e} methods | epsilon
+ * methods = VoidMethod methods | TypedMethod methods | epsilon
+ * VoidMethod = mod void m(params) {e}
+ * TypedMethods = mod type m(params) {e return x}
+ * 							| mod type m(params) {e return v}
  * op = + | - | * | / | == | != | < | > | %
  * args = e | e, e | epsilon
  *
@@ -43,6 +46,7 @@ import io.Source
  *   | C										# class name
  *   | var x: type = e			# variable declaration
  *   | x = e								# assignment
+ *   | print e              # print statement
  *   | e; e									# sequence
  *   | e op e								# binary operation
  *   | if e then e else e 	# conditional
@@ -54,12 +58,14 @@ import io.Source
  *   | RT(e)								# execute at runtime
  *   | IsCT(e)							# tests for a compile-time value
  */
+
+
  
  
 object Keywords extends Enumeration {
 	type Keywords = Value
 	val Class, Method, Var, Init, Static, If, Then, Else, While, Do, New,
-		Invoke, CT, RT, IsCT, Str, Numb, Bool, Void = Value
+		Invoke, CT, RT, IsCT, Str, Numb, Bool, Void, Return, Print = Value
 }
 
 object Operators extends Enumeration {
@@ -77,8 +83,6 @@ case class ValString(value: String) extends Token {}
 case class ValBool(value: Boolean) extends Token {}
 case object ValNull extends Token {}
 case object Semicolon extends Token {}
-case object OpenBracket extends Token {}
-case object CloseBracket extends Token {}
 case object OpenParan extends Token {}
 case object CloseParan extends Token {}
 case object OpenBrace extends Token {}
@@ -127,9 +131,19 @@ class Lexer(file: String) {
 					i = i + 1
 					col += 1
 				case '/' => 
-					tokens = (Operator(Operators.Div), Position(col, lnum)) :: tokens
-					i = i + 1
-					col += 1
+					if(pgm.charAt(i+1) == '/'){
+						while(i < pgm.length && ch != '\n'){
+							i = i + 1
+							ch = pgm.charAt(i)
+						}
+						col = 0
+						lnum +=1
+					}
+					else {
+						tokens = (Operator(Operators.Div), Position(col, lnum)) :: tokens
+						i = i + 1
+						col += 1
+					}
 				case '=' => {
 					if(pgm.charAt(i+1) == '='){
 						tokens = (Operator(Operators.Eq), Position(col, lnum)) :: tokens
@@ -141,6 +155,7 @@ class Lexer(file: String) {
 					i = i + 1
 					col += 1
 				}
+					
 				case '!' => {
 					if(pgm.charAt(i+1) == '='){
 						tokens = (Operator(Operators.Neq), Position(col, lnum)) :: tokens
@@ -176,12 +191,8 @@ class Lexer(file: String) {
 					tokens = (CloseBrace, Position(col, lnum)) :: tokens
 					i = i + 1
 					col += 1
-				case '[' =>
-					tokens = (OpenBracket, Position(col, lnum)) :: tokens
-					i = i + 1
-					col += 1
-				case ']' =>
-					tokens = (CloseBracket, Position(col, lnum)) :: tokens
+				case '[' | ']' =>
+					(Illegal, Position(col, lnum)) :: tokens
 					i = i + 1
 					col += 1
 				case '(' =>
@@ -205,6 +216,9 @@ class Lexer(file: String) {
 					col += 1
 				case '\"' => {
 					var word = ""
+					i = i + 1
+					col += 1
+					ch = pgm.charAt(i)
 					while(i < pgm.length && ch != '\"'){
 						word = word + ch
 						i = i + 1
@@ -249,6 +263,8 @@ class Lexer(file: String) {
 						case "str" => Word(Keywords.Str)
 						case "bool" => Word(Keywords.Bool)
 						case "void" => Word(Keywords.Void)
+						case "return" => Word(Keywords.Return)
+						case "print" => Word(Keywords.Print)
 						case _ => {
 							try {
 								ValInt(word.toInt)

@@ -26,31 +26,33 @@ case class Position(col: Int, line: Int) extends Pos{
 }
 case object NoPosition extends Pos {}
 
-sealed trait Premitive[A] {
+sealed trait Premitive {
+	type A
 	def optionValue: Option[A]
 }
 
 sealed trait Value
 
-case object Null extends Premitive[Nothing] with Value{
+case object Null extends Premitive with Value{
+	type A = Nothing
 	override def optionValue = None
 }
 
-case class MString(value: String) extends Premitive[String] with Value{
+case class MString(value: String) extends Premitive with Value{
+	type A = String
 	def optionValue = Some(value)
 }
 
-case class MInt(value: Int) extends Premitive[Int] with Value{
+case class MInt(value: Int) extends Premitive with Value{
+	type A = Int
 	def optionValue = Some(value)
 }
 
-case class MBool(value: Boolean) extends Premitive[Boolean] with Value{
+case class MBool(value: Boolean) extends Premitive with Value{
+	type A = Boolean
 	def optionValue = Some(value)
 }
 	
-
-
-case class MList[A <: Value](values: List[A]) extends Value {}
 
 case class MObject(clazz: MClass, var env: Map[Var, Value]) extends Value {}
 
@@ -60,9 +62,32 @@ sealed abstract class Block {
 	var env: Map[Var, Value]
 }
 
-case class Program(classes: List[MClass], var env: Map[Var, Value]) extends Block {}
+case class Program(classes: List[MClass], var env: Map[Var, Value]) extends Block {
+	def getClass(name: ClassName): Option[MClass] = {
+		getClassAux(name, classes)
+	}
+	
+	private def getClassAux(n: ClassName, ns: List[MClass]): Option[MClass] = {
+		ns match {
+			case Nil => None
+			case x :: xs => if(x.name == n) Some(x) else getClassAux(n, xs)
+		}
+	}
+}
 
 case class MClass (name: ClassName, args: List[Var], body: MClassBody, pos: Pos, var env: Map[Var, Value]) extends Block {
+	
+	def getMethod(name: String): Option[MMethod] = {
+		getMethodAux(name, body.methods)
+	}
+	
+	private def getMethodAux(name: String, methods: List[MMethod]): Option[MMethod] = {
+		methods match {
+			case Nil => None
+			case x :: xs => if(x.name == name) Some(x) else getMethodAux(name, xs)
+		}
+	}
+	
 	override def equals(that: Any): Boolean = {
 		if(that == null || !that.isInstanceOf[MClass]) false
 		else if (this.name == that.asInstanceOf[MClass].name) true
@@ -108,11 +133,12 @@ case object INT extends Types {}
 case object Str extends Types {}
 case object Bool extends Types {}
 case object Void extends Types {}	
+case object NullType extends Types {}
 case object Unknown extends Types {}
 
 sealed abstract class Expression {}
 
-case class Constant(value: Value, pos: Pos) extends Expression {
+case class Constant(value: Premitive, pos: Pos) extends Expression {
 	override def equals(that: Any): Boolean = {
 		if(that == null || !that.isInstanceOf[Constant]) false
 		else if (this.value == that.asInstanceOf[Constant].value) true
@@ -121,7 +147,8 @@ case class Constant(value: Value, pos: Pos) extends Expression {
 	override def hashCode(): Int = value.hashCode
 }
 
-case class Var(name: String, tpe: Types, pos: Pos) extends Expression {
+case class Var(name: String, var tpe: Types, pos: Pos, 
+								init: Boolean = false) extends Expression {
 	override def equals(that: Any): Boolean = {
 		if(that == null || !that.isInstanceOf[Var]) false
 		else if (this.name == that.asInstanceOf[Var].name) true
@@ -151,6 +178,9 @@ case class New(cName: ClassName, args: List[Expression], pos: Pos) extends Expre
 case class CT(expr1: Expression, expr2: Expression, pos: Pos) extends Expression {}
 case class RT(expr: Expression, pos: Pos) extends Expression {}
 case class IsCT(expr: Expression, pos: Pos) extends Expression {}
+case class Return(expr: Expression, pos: Pos) extends Expression {}
+case class Print(expr: Expression, pos: Pos) extends Expression {}
+
 case object Empty extends Expression {}
 case object Semi extends Expression {}
  

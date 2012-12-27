@@ -23,15 +23,117 @@ import lexer._
 import ast._
 import semantics._
 import parser._
+import ir._
 
 class Compile(file: String){
-	def start: Unit = {
+	private def start: Unit = {
 		val lexer = new Lexer(file)
 		lexer.start
 		val parser = new Parser(lexer.lines, lexer.getTokens)
 		val ast = parser.start
-		new SemanticsAnalyzer(ast, lexer.lines).start
+		new SymbolTableChecker(ast, lexer.lines).start
+		val pgm = new IntermediateCode(ast).start
+		print(printIR(pgm))
 	}
+	
+	private def printIR(pgm: IRProgram): String = { 
+		val classes = for(clazz <- pgm.classes) yield{
+			val name = "class " + clazz.name + "{\n"
+			val init = clazz.name + "(" + printParams(clazz.args) + ")"
+			val exprs = "{\n" + printExpr(clazz.const) + "\n}\n"
+			val methods = for(method <- clazz.methods) yield {
+				val mod = method.isStatic match{
+					case true => "static "
+					case false => ""
+				}
+				mod + printType(method.tpe) + method.name + 
+							"(" + printParams(method.args) + "){\n" + 
+							printExpr(method.body) + "\n}"
+			}
+							
+			name + init + exprs + methods.mkString("\n") + "\n}\n"
+		}
+		classes.mkString("\n")+"\n"
+	}
+	
+	private def printParams(params: List[IRVar]) : String = {
+		val argsAux = for(arg <- params) yield{
+			printType(arg.tpe) + arg.name + ","
+		}
+		val args = argsAux.mkString(" ")
+		try{
+			args.substring(0, args.length-1)
+			}catch{
+				case ex: StringIndexOutOfBoundsException => args
+			}
+	}
+	
+	private def printArgs(a: List[IRVar]): String = {
+		val argsAux = for(arg <- a) yield{
+			arg.name + ","
+		}
+		val args = argsAux.mkString(" ")
+		try{
+			args.substring(0, args.length-1)
+			}catch{
+				case ex: StringIndexOutOfBoundsException => args
+			}
+	}
+	private def printExpr(exprs: List[IRExpr]): String = {
+		val r = for(expr <- exprs) yield {
+			printExpr(expr)
+		}
+		r.mkString("\n") + "\n"
+	}
+	
+	private def printExpr(expr: IRExpr): String = {
+		expr match{
+			case IRBinary(e1, e2, op, e3) => 
+				e1.name + " = " + e2.name + printOp(op) + e3.name + ";"
+			case IRAssignVar(e, v) => e.name + " = " + v.name + ";"
+			case IRAssignConst(e, v) => e.name + " = " + v.value.get + ";"
+			case IRAssignCall(e, f) => e.name + " = " + printExpr(f)
+			case IRAssignNew(e, n) => e.name + " = " + printExpr(n)
+			case IRVar(n, tpe) => printType(tpe) + n + ";"
+			case IRNotVar(v) => "not " + v.name + ";"
+			case IRLabel(l) => l+":"
+			case IRIF(c, g) => "if not " + c.value.name + " goto " + g.l
+			case WhileIf(c, g) => "if " + c.name + " goto " + g.l
+			case IRGoto(l) => "goto " + l.l + ";"
+			case IRPrint(v) => "System.out.println(" + v.name + ");"
+			case IRCall(c, m, args, _) => c + "." + m + "(" + printArgs(args) + ");"
+			case IRInvoke(c, m, args) => "invoke(" + c.name + ", " + 
+																			m.name + ", " + printArgs(args) + ");"
+			case IRNew(c, args) => "new " + c + "(" + printArgs(args) + ");"
+			case IRReturn(v) => "return " + v.name + ";"
+			case _ => ""
+		}
+	}
+	
+	private def printOp(op: IROp.Value): String = {
+		op match{
+			case IROp.Add => " + "
+			case IROp.Sub => " - "
+			case IROp.Mul => " * "
+			case IROp.Div => " / "
+			case IROp.Eq => " == "
+			case IROp.Neq => " != "
+			case IROp.Gt => " > "
+			case IROp.Lt => " < "
+			case IROp.Mod => " % "
+			case IROp.Assign => " = "
+		}
+	}
+	private def printType(tpe: IRType) = {
+		tpe match {
+			case IRInt => "int "
+			case IRStr => "String "
+			case IRBool => "boolean "
+			case IRVoid => "void "
+			case IRObject(x) => x + " "
+			case _ => throw new Error("Should not happen")
+		}
+	} 
 }
 object Compile {
 	

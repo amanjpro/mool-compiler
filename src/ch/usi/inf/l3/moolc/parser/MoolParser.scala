@@ -23,8 +23,8 @@ import _root_.ch.usi.inf.l3.moolc.lexer._
 import _root_.ch.usi.inf.l3.moolc.ast._
 
 /*
- * # vs is string, vb is bool, vn is number, [v] is list and C:p is object
- * v = null | vs | vb | vn | [v] | C:p
+ * # vs is string, vb is bool, vn is number and C:p is object
+ * v = null | vs | vb | vn | C:p
  * type = int | bool | str | C
  * Prog = CD Prog | epsilon
  * params = param | param params2 , param  | epsilon
@@ -33,7 +33,10 @@ import _root_.ch.usi.inf.l3.moolc.ast._
  * vars = var x: type; vars | epsilon
  * CD = class C(params) {vars init{e} methods}
  * mod = static | method
- * methods = mod type m(params) {e} methods | epsilon
+ * methods = VoidMethod methods | TypedMethod methods | epsilon
+ * VoidMethod = mod void m(params) {e}
+ * TypedMethods = mod type m(params) {e return x}
+ * 							| mod type m(params) {e return v}
  * op = + | - | * | / | == | != | < | > | %
  * args = e | e, e | epsilon
  *
@@ -43,6 +46,7 @@ import _root_.ch.usi.inf.l3.moolc.ast._
  *   | C										# class name
  *   | var x: type = e			# variable declaration
  *   | x = e								# assignment
+ *   | print e              # print statement
  *   | e; e									# sequence
  *   | e op e								# binary operation
  *   | if e then e else e 	# conditional
@@ -184,6 +188,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 			val params = paramsList()
 			reduce(OpenBrace)
 			expr = stmts()
+			if(tpe != Void) expr = Seq(expr, reduceReturn, pos)
 			methods = MMethod(mod, name, tpe, params, pos, expr, Map.empty) :: methods
 			reduce(CloseBrace)
 		}
@@ -218,6 +223,8 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 				case Word(Keywords.RT) => reduceRT
 				case Word(Keywords.IsCT) => reduceIsCT
 				case Word(Keywords.New) => reduceNew
+				case Word(Keywords.Return) => Empty
+				case Word(Keywords.Print) => reducePrint
 				case OpenBrace => {
 					reduce(OpenBrace)
 					val seq = stmts()
@@ -276,6 +283,22 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 		else Empty
 	}
 	
+	private def reduceReturn(): Return = {
+		reduce(Word(Keywords.Return))
+		val (token, pos) = tokens.head
+		val rtrn = token match{
+			case ValInt(x) => Constant(MInt(x), pos)
+			case ValString(x) => Constant(MString(x), pos)
+			case ValBool(x) => Constant(MBool(x), pos)
+			case ValNull => Constant(Null, pos)
+			case ID(x) if(!classes.contains(x))=> Var(x, Unknown, pos)
+			case _ => error(pos)
+		}
+		tokens = tokens.tail
+		reduce(Semicolon)
+		Return(rtrn, pos)
+	}
+	
 	private def binary(op: Operators.Value): Operation = {
 		op match{
 			case Operators.Add => Add
@@ -319,11 +342,16 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 	private def reduceVar(): Assign ={
 		val (_, p1) = tokens.head
 		reduce(Word(Keywords.Var))
-		val name = Var(reduce(), reduceType, p1)
+		val name = Var(reduce(), reduceType, p1, true)
 		reduce(Operator(Operators.Assign))
 		val (_, p2) = tokens.head
 		val value = stmt()
 		Assign(name, value, p2)
+	}
+	private def reducePrint(): Print = {
+		val (_, p1) = tokens.head
+		reduce(Word(Keywords.Print))
+		Print(stmt, p1)
 	}
 	private def reduceInvoke(): Invoke ={
 		val (_, pos) = tokens.head
@@ -337,6 +365,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 		reduce(CloseParan)
 		Invoke(className, methodName, args, pos)
 	}
+	
 	private def reduceCT(): CT ={
 		val (_, pos) = tokens.head
 		reduce(Word(Keywords.CT))
@@ -430,7 +459,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 			val p = pos.asInstanceOf[Position]
 			throw new Error("in line " + (p.line+1) + ": \n" +
 																	lines(p.line) + "\n" +
-																	(" " * p.col) + "^")
+																	(" " * (p.col+13)) + "^")
 		}
 		else //This should never happen 
 			throw new Error("An error occured during parsing the text")
