@@ -1,0 +1,40 @@
+class Circle(x0,y0,r0) {
+  var x;
+  var y;
+  var r;
+  init {
+    x := x0;
+    y := y0;
+    r := r0;
+  }
+  method resize(n) { r := n*r; }
+}
+class Rectangle(x0,y0,w0,h0) {
+  var x;
+  var y;
+  var w;
+  var h;
+  init {
+    x := x0;
+    y := y0;
+    w := w0;
+    h := h0;
+  }
+  method area() { h*w; }
+  method resize(n) {
+    w := n*w;
+    h := n*h;
+  }
+}
+
+
+class Main() {
+  static main() {
+    var s = this.getShape();
+    s.resize(CT(6));
+  }
+  static getShape() {
+    var c = new Circle(RT(3),RT(5),RT(10));
+    c;
+  }
+}

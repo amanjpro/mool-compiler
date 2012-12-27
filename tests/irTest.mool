@@ -1,0 +1,20 @@
+class Test(){
+	method int mthd(){
+		if 10 == 1 then {
+			var x: int = 2;
+			var b: int = x + 3;
+		}
+		else{
+			var y: int = 3;
+			var z: int = y + 3;
+		}
+		
+		//here is a while example
+		while true do {
+			var a: int = 2 + 2;
+		}
+		var x1: str = "hello";
+		print x1 + 3
+		return 2;
+	}
+}

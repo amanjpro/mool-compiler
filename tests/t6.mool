@@ -1,0 +1,24 @@
+class Circle(x0,y0,r0) {
+  var x;
+  var y;
+  var r;
+  init {
+    x := x0;
+    y := y0;
+    r := r0;
+  }
+  method area() { 3 * r; }
+  method areaB() { r * this.area(); }
+  method getR() { r; }
+  method doubleR() { r:=r*2; }
+}
+class Main() {
+  static main() {
+    var c = new Circle(3,5,CT(10));
+    c.area();
+    c.areaB();
+    c.doubleR();
+    var r = c.getR();
+    r;
+  }
+}

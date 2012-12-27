@@ -1,0 +1,13 @@
+class Test() {
+  method pow(n,m) { 
+    if (n=0) 
+        1;
+    else
+        m*this.pow(n-1,m);
+  }
+
+  static main(x) {
+    this.pow(CT(3), x);
+  }
+}
+

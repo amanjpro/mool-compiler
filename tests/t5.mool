@@ -1,0 +1,17 @@
+class Test() {
+
+  method rrppow(n,m) {
+    if (n = 0)
+       1;
+    else if ((n % 2) = 0) {
+        var r = this.rrppow(n / 2, m);
+        r * r;
+      }
+    else
+      m * this.rrppow(n - 1, m);
+  }
+
+  static main(x) {
+    this.rrppow(CT(11), x);
+  }
+}

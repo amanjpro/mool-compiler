@@ -1,0 +1,188 @@
+class Node(d, n) {
+  var data;
+  var next;
+  init {
+    data := d;
+    next := n;
+  }
+  method setNext(n) { 
+    next := n; 
+  }
+  method getData() {
+    data;
+  }
+  method getNext() {
+    next;
+  }
+  method isNull() {
+    0;
+  }
+}
+
+class NullNode(n) {
+  var next;
+  init {
+    next := n;
+  }
+  method setNext(n) { 
+    next := n; 
+  }
+  method getNext() {
+    next;
+  }
+  method isNull() {
+    1;
+  }
+}
+
+class List() {
+  var head;
+  var tail;
+  init {
+    head := new NullNode(new NullNode());
+    tail := head;
+  }
+  method add(d) {
+    var newNode = new Node(d, new NullNode());
+    tail.setNext(newNode);
+    tail := newNode;
+  }
+  method getHead() {
+    head;
+  }
+  method iterator() {
+    new Iterator(this);
+  }
+}
+
+class Iterator(l) {
+  var list;
+  var current;
+  init {
+    list := l;
+    current := l.getHead();
+  }
+  method hasNext() {
+    var n = current.getNext();
+    (n.isNull() != 1);
+  }
+  method next() {
+    var n = current.getNext();
+    var ret = n.getData();
+    current := n;
+    ret;
+  }
+}
+
+class State(n, i) {
+  var name;
+  var id;
+  var ins;
+  var outs;
+  init {
+    name := n;
+    id := i;
+    ins := new List();
+    outs := new List();
+  }
+  method getId() {
+    id;
+  }
+  method getIns() {
+    ins;
+  }
+  method getName() {
+    name;
+  }
+  method getOuts() {
+    outs;
+  }
+}
+
+class Transition(f, e, t) {
+  var from;
+  var to;
+  var event;
+  init {
+    from := f;
+    to := t;
+    event := e;
+  }
+  method setup() {
+    var lout = from.getOuts();
+    var lin = to.getIns();
+    lin.add(this);
+    lout.add(this);
+  }
+  method getFrom() {
+    from;
+  }
+  method getTo() {
+    to;
+  }
+  method getEvent() {
+    event;
+  }
+}
+
+class StateMachine() {
+  var states;
+  var start;
+  init {
+    states := new List();
+  }
+  method newTransition(open, string, closed) {
+    new Transition(open, string, closed);
+  }
+  method newState(string, i) {
+    var s = new State(string, i);
+    states.add(s);
+    s;
+  }
+  method getStates() {
+    states;
+  }
+  method setStates(ss) {
+    states := ss;
+  }
+  method setStart(s) {
+    start := s;
+  }
+  method execute(st) {
+    var current = start.getId();
+    var cond = RT(true);
+    while (cond) {
+      current := this.run(current, st);
+      cond := (current != -1);
+    }
+  }
+  
+  method run(current, st) {
+    var input = RT(st);
+    var is = states.iterator();
+    while (is.hasNext()) {
+      var st = is.next();
+      if (st.getId() = current) {
+        var outs = st.getOuts();
+        var it = outs.iterator();
+        while (it.hasNext()) {
+          var t = it.next();
+          if (t.getEvent() = input) {
+            var to = t.getTo();
+            to.getId();
+          }
+        }
+        if (input = -1){
+           -1;
+        }
+      }
+    }
+    current;
+  }
+}
+
+class Main() {
+  static main() {
+    var door = CT(new StateMachine());
+  }
+}
