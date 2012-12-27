@@ -33,31 +33,46 @@ class IntermediateCode(pgm: Program) {
 	}
 	
 	private def getNewTemp() = {
-		val str = "t" + tcounter
+		val str = "temp_" + tcounter
 		tcounter += 1
 		str
 	}
 	
 	def start(): IRProgram = {
 		val classes = for(clazz <- pgm.classes) yield {
+			val classParams = convertParams(clazz.args)
 			val methods = for(method <- clazz.body.methods) yield {
-				val exprs = stmt(method.expr).reverse
+				val params = convertParams(method.args)
+				val exprs = removeExtraVars(stmt(method.expr), params ::: classParams)
 				val isStatic = method.mod match{
 					case ClassMod => true
 					case InstanceMod => false
 				}
 				IRMethod(method.name, getType(method.tpe), isStatic, 
-														convertParams(method.args), exprs)
+														params, exprs)
 			}
-			IRClass(clazz.name.name, convertParams(clazz.args), 
+			IRClass(clazz.name.name, classParams, 
 							stmt(clazz.body.const), methods)
 		}
 		
 		IRProgram(classes)
 	}
 	
+	private def removeExtraVars(es: List[IRExpr], vars: List[IRVar]): List[IRExpr] = {
+		var exprs = es
+		var temp: List[IRExpr] = Nil
+		while(exprs != Nil){
+			val expr = exprs.head
+			exprs = exprs.tail
+			expr match {
+				case v: IRVar if(vars.contains(v) || exprs.contains(v)) =>
+				case _ => temp = expr :: temp
+			}
+		}
+		temp
+	}
 	private def getNewLabel() = {
-		val str = "l" + lcounter
+		val str = "label_" + lcounter
 		lcounter += 1
 		IRLabel(str)
 	}
@@ -78,9 +93,7 @@ class IntermediateCode(pgm: Program) {
 			case Var(x, tpe, _, _) => 
 				val v = IRVar(x, getType(tpe))
 				lastVar = v
-				if(!list.contains(v))
-					v :: list
-				else list
+				v :: list
 			case Assign(v, e, _) => 
 				val l1 = stmtAux(v, list)
 				val vr = getLastVar
@@ -275,7 +288,15 @@ case class IRAssignVar(e1: IRVar, v: IRVar) extends IRExpr with IRAssign{}
 case class IRAssignConst(e1: IRVar, c: IRConst) extends IRExpr with IRAssign{}
 case class IRAssignCall(e1: IRVar, f: IRCall) extends IRExpr with IRAssign{}
 case class IRAssignNew(e1: IRVar, n: IRNew) extends IRExpr with IRAssign {}
-case class IRVar(name: String, var tpe: IRType) extends IRExpr {}
+case class IRVar(name: String, var tpe: IRType) extends IRExpr {
+	override def equals(that: Any): Boolean = {
+		if(that == null || !that.isInstanceOf[IRVar]) false
+		else if (this.name == that.asInstanceOf[IRVar].name) true
+		else false
+	}
+	override def hashCode(): Int = name.hashCode
+	
+}
 case class IRNotVar(value: IRVar) extends IRExpr {}
 case class IRLabel(l: String) extends IRExpr {}
 case class IRIF(c: IRNotVar, goto: IRLabel) extends IRExpr {}

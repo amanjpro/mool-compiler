@@ -109,6 +109,11 @@ class Lexer(file: String) {
 		while(i < pgm.length){
 			var ch = pgm.charAt(i)
 			ch match{
+				case '_' => {
+					i = i + 1
+					col = 0
+					tokens = (Illegal, Position(col, lnum)) :: tokens
+				}
 				case '\n' => {
 					lnum = lnum + 1
 					i = i + 1
