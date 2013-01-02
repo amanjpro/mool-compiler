@@ -3,7 +3,17 @@ mool-compiler
 
 Mool Compiler, is a toy compiler written in Scala, which compiles programs written in Mool to Java bytecode
 
-the semantics of the language:
+To compile the compiler:
+
+1- You need to have JDK, Scala SDK, and Ant
+2- Open the terminal and write
+	ant jar
+	
+And to run the mool compiler:
+1- Open the terminal and write:
+	./mool.sh path/to/the/file.mool
+	
+The semantics of the language:
 
 /*
  * # vs is string, vb is bool, vn is number and C:p is object
