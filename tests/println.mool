@@ -1,0 +1,27 @@
+//class Test2(b: int, c: int){
+//	var first: int;
+//	var second: int;
+//	init{
+//		first = b;
+//		second = c;
+//	}
+	
+//	method int call(b: int, c: int){
+//		var d: int = b + c + first + second;
+//		return d;
+//	}
+//}
+class Test(){
+	static int call(b: int, c: int){
+		var d: int = b + c;
+		return d;
+	}
+	
+	static void main(){
+		//var n: Test2 = new Test2(1, 2);
+		//print "" + n.call(1, 3);
+		invoke("Test", "call", 1, 2)
+	}
+}
+
+

@@ -49,6 +49,7 @@
 	<property name="build" value="${base}/build"/>
 	<property name="dist" value="${base}/dist"/>
 	<property name="main.class" value="ch.usi.inf.l3.moolc.Compile"/>
+	<property name="lib" value="${base}/lib"/>
 	
 	<target name="init">
 
@@ -56,6 +57,7 @@
 		<path id="build.classpath">
 			<pathelement location="${scala-library.jar}" />
 			<pathelement location="${src}"/>
+			<pathelement location="${lib}/asm-all-4.1.jar"/>
 		</path>
 		
 		<taskdef resource="scala/tools/ant/antlib.xml">
@@ -69,7 +71,9 @@
 	
 	<target name="build" depends="clean, init">
 		<mkdir dir="${build}"/>
-		<scalac srcdir="${src}" destdir="${build}" classpathref="build.classpath">
+		<scalac srcdir="${src}" unchecked="yes"  deprecation="yes"
+						destdir="${build}" classpathref="build.classpath"
+						addparams="-Dscalac.patmat.analysisBudget=off">
 			<include name="**/*.scala" />
 			<exclude name="forget/**/*.scala" />
 		</scalac>
@@ -79,12 +83,21 @@
 	<target name="jar" depends="build" description="generate the jar file" >
 		<!-- Create the distribution directory -->
 		<mkdir dir="${dist}"/>
+		
+		<copy todir="${dist}/lib">
+		  <fileset dir="${lib}">
+		    <include name="*.jar" />
+		  </fileset>
+		</copy>
+	
 		<!-- Put everything in ${build} into the 
 		                    ${project}.jar file -->
 		<jar jarfile="${dist}/${project}.jar" basedir="${build}">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 				<attribute name="Main-Class" value="${main.class}"/>
+				<attribute name="Class-Path" 
+										value="${lib}/asm-all-4.1.jar ${project}.jar" />
 				<section name="common">
 					<attribute name="Specification-Title" value="${project}" />
 					<attribute name="Specification-Version" value="${version}"/>

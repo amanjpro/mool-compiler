@@ -20,10 +20,10 @@
 package ch.usi.inf.l3.moolc.ir
 
 import _root_.ch.usi.inf.l3.moolc.ast._
+import org.objectweb.asm.Label
 
 class IntermediateCode(pgm: Program) {
 	private var tcounter = 0
-	private var lcounter = 0
 	private var lastVar: IRVar = null
 	
 	private def getLastVar = {
@@ -40,9 +40,10 @@ class IntermediateCode(pgm: Program) {
 	
 	def start(): IRProgram = {
 		val classes = for(clazz <- pgm.classes) yield {
-			val classParams = convertParams(clazz.args)
+			val classVars = convertVarsToIRVar(clazz.body.vars)
+			val classParams = convertVarsToIRVar(clazz.args)
 			val methods = for(method <- clazz.body.methods) yield {
-				val params = convertParams(method.args)
+				val params = convertVarsToIRVar(method.args)
 				val exprs = removeExtraVars(stmt(method.expr), params ::: classParams)
 				val isStatic = method.mod match{
 					case ClassMod => true
@@ -51,8 +52,10 @@ class IntermediateCode(pgm: Program) {
 				IRMethod(method.name, getType(method.tpe), isStatic, 
 														params, exprs)
 			}
-			IRClass(clazz.name.name, classParams, 
-							stmt(clazz.body.const), methods)
+			val const = 
+				removeExtraVars(stmt(clazz.body.const), classVars ::: classParams)
+			IRClass(clazz.name.name, classVars, classParams, 
+							const , methods)
 		}
 		
 		IRProgram(classes)
@@ -72,12 +75,11 @@ class IntermediateCode(pgm: Program) {
 		temp
 	}
 	private def getNewLabel() = {
-		val str = "label_" + lcounter
-		lcounter += 1
-		IRLabel(str)
+		IRLabel(new Label())
 	}
 	
-	private def convertParams(vars: List[Var]): List[IRVar] = {
+	
+	private def convertVarsToIRVar(vars: List[Var]): List[IRVar] = {
 		for(v <- vars) yield IRVar(v.name, getType(v.tpe))
 	}
 	private def stmt(expr: Expression): List[IRExpr] = stmtAux(expr, Nil)
@@ -139,7 +141,7 @@ class IntermediateCode(pgm: Program) {
 				val v = getLastVar
 				val l2 = stmt(l)
 				v.tpe = IRBool
-				val cond = WhileIf(v, lbody)
+				val cond = IRWhileIf(v, lbody)
 				val r = ((cond :: l1) ::: List(ltest)) ::: l2 ::: List(lbody, IRGoto(ltest))
 				r ::: list
 			case Print(str, _) =>
@@ -150,7 +152,8 @@ class IntermediateCode(pgm: Program) {
 			case StaticCall(c, m, args, _) => 
 				processCall(c.name, m, args, list)
 			case DynamicCall(o, m, args, _) => 
-				processCall((o.tpe.asInstanceOf[ClassName]).name, m, args, list, false)
+				processCall((o.tpe.asInstanceOf[ClassName]).name, m, 
+																										args, list, false, o.name)
 			case Invoke(e, m, args, _) =>
 				val l2 = stmtAux(e, list)
 				val cc = getLastVar
@@ -162,7 +165,7 @@ class IntermediateCode(pgm: Program) {
 					getLastVar
 				}
 				irArgs.reverse
-				IRInvoke(cc, mc, irArgs) :: list
+				IRInvoke(cc, mc, irArgs) :: l1
 			case New(c, args, _) => 
 				var l1 = list
 				val irArgs = for(arg <- args) yield {
@@ -174,7 +177,7 @@ class IntermediateCode(pgm: Program) {
 				val v = IRVar(getNewTemp, IRObject(c.name))
 				val assign = IRAssignNew(v, nw)
 				lastVar = v
-				assign :: v :: list
+				assign :: v :: l1
 			case CT(e1, e2, _) =>
 				stmtAux(e1, list)
 			case RT(e, _) =>
@@ -248,7 +251,8 @@ class IntermediateCode(pgm: Program) {
 	
 	private def processCall(c: String, m: String, 
 							args: List[Expression], list: List[IRExpr], 
-								isStatic: Boolean = true) : List[IRExpr] = {
+								isStatic: Boolean = true,
+								obj: String = "") : List[IRExpr] = {
 		var l1 = list
 		val irArgs = for(arg <- args) yield {
 			l1 = stmtAux(arg, l1)
@@ -256,10 +260,13 @@ class IntermediateCode(pgm: Program) {
 		}
 		irArgs.reverse
 		val v = IRVar(getNewTemp, getReturnType(ClassName(c, NoPosition), m))
-		var call = IRCall(c, m, irArgs, isStatic)
+		var call = isStatic match {
+			case true => IRCall(c, m, irArgs, isStatic)
+			case false => IRCall(obj, m, irArgs, isStatic)
+		}
 		val assign = IRAssignCall(v, call)
 		lastVar = v
-		assign :: v :: list
+		assign :: v :: l1
 	}
 	
 	private def getReturnType(c: ClassName, m: String): IRType = {
@@ -298,26 +305,59 @@ case class IRVar(name: String, var tpe: IRType) extends IRExpr {
 	
 }
 case class IRNotVar(value: IRVar) extends IRExpr {}
-case class IRLabel(l: String) extends IRExpr {}
+case class IRLabel(l: Label) extends IRExpr {}
 case class IRIF(c: IRNotVar, goto: IRLabel) extends IRExpr {}
-case class WhileIf(c: IRVar, goto: IRLabel) extends IRExpr {}
+case class IRWhileIf(c: IRVar, goto: IRLabel) extends IRExpr {}
 case class IRGoto(l: IRLabel) extends IRExpr {}
 case class IRPrint(v: IRVar) extends IRExpr {}
 case class IRCall(c: String, m: String, args: List[IRVar], isStatic: Boolean) extends IRExpr {}
 case class IRInvoke(c: IRVar, m: IRVar, args: List[IRVar]) extends IRExpr {}
 case class IRNew(c: String, args: List[IRVar]) extends IRExpr {}
-case class IRCT(e: IRVar, ct: IRVar) extends IRExpr {}
-case class IRRT(e: IRVar) extends IRExpr {}
-case class IRIsCT(e: IRVar) extends IRExpr {}
 case class IRReturn(v: IRVar) extends IRExpr {}
 
 
 sealed abstract class IRBlock {}
-case class IRProgram(classes: List[IRClass]) extends IRBlock {}
-case class IRClass(name: String, args: List[IRVar], 
-							const: List[IRExpr], methods: List[IRMethod]) extends IRBlock {}
+case class IRProgram(classes: List[IRClass]) extends IRBlock {
+	def getClass(name: String): Option[IRClass] = {
+		getClassAux(name, classes)
+	}
+	
+	private def getClassAux(n: String, ns: List[IRClass]): Option[IRClass] = {
+		ns match {
+			case Nil => None
+			case x :: xs => if(x.name == n) Some(x) else getClassAux(n, xs)
+		}
+	}
+}
+case class IRClass(name: String, vars: List[IRVar], args: List[IRVar], 
+							const: List[IRExpr], methods: List[IRMethod]) extends IRBlock {
+	def getMethod(name: String): Option[IRMethod] = {
+		getMethodAux(name, methods)
+	}
+	
+	private def getMethodAux(n: String, ns: List[IRMethod]): Option[IRMethod] = {
+		ns match {
+			case Nil => None
+			case x :: xs => if(x.name == n) Some(x) else getMethodAux(n, xs)
+		}
+	}
+	
+	override def equals(that: Any): Boolean = {
+		if(that == null || !that.isInstanceOf[IRClass]) false
+		else if (this.name == that.asInstanceOf[IRClass].name) true
+		else false
+	}
+	override def hashCode(): Int = name.hashCode
+}
 case class IRMethod(name: String, tpe: IRType, isStatic: Boolean, 
-							args: List[IRVar], body: List[IRExpr]) extends IRBlock {}
+							args: List[IRVar], body: List[IRExpr]) extends IRBlock {
+	override def equals(that: Any): Boolean = {
+		if(that == null || !that.isInstanceOf[IRMethod]) false
+		else if (this.name == that.asInstanceOf[IRMethod].name) true
+		else false
+	}
+	override def hashCode(): Int = name.hashCode
+}
 	
 	
 	
@@ -327,25 +367,34 @@ object IROp extends Enumeration{
 }
 
 sealed trait IRPremitive {
+	type A
 	def get: String
 	def getType: IRType
+	def getValue: A
 }
 case class IRIntValue(value: Int) extends IRPremitive {
+	type A = Int
 	def get = value + ""
 	def getType = IRInt
+	def getValue = value
 }
 case class IRBoolValue(value: Boolean) extends IRPremitive {
+	type A = Boolean
 	def get = value + ""
 	def getType = IRBool
+	def getValue = value
 }
 case class IRStringValue(value: String) extends IRPremitive {
+	type A = String
 	def get = "\"" + value + "\""
 	def getType = IRStr
+	def getValue = value
 }
 case object IRNullValue extends IRPremitive {
-	type A = Nothing
+	type A = Null
 	def get = "null"
 	def getType = IRNoType
+	def getValue = null
 }
 	
 	

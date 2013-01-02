@@ -24,6 +24,8 @@ import ast._
 import semantics._
 import parser._
 import ir._
+import codegen._
+import java.io._
 
 class Compile(file: String){
 	private def start: Unit = {
@@ -33,12 +35,21 @@ class Compile(file: String){
 		val ast = parser.start
 		new SymbolTableChecker(ast, lexer.lines).start
 		val pgm = new IntermediateCode(ast).start
-		print(printIR(pgm))
+		val path = new File(file).getParent
+		printToFile(printIR(pgm), file + ".ir")
+		new BytecodeGenerator(pgm, path).start
 	}
 	
+	
+	private def printToFile(str: String, dest: String) = {
+		val fos = new PrintWriter(new FileOutputStream(dest))
+		fos.write(str)
+		fos.close
+	}
 	private def printIR(pgm: IRProgram): String = { 
 		val classes = for(clazz <- pgm.classes) yield{
 			val name = "class " + clazz.name + "{\n"
+			val fields = printFields(clazz.vars) + "\n"
 			val init = clazz.name + "(" + printParams(clazz.args) + ")"
 			val exprs = "{\n" + printExpr(clazz.const) + "\n}\n"
 			val methods = for(method <- clazz.methods) yield {
@@ -51,11 +62,17 @@ class Compile(file: String){
 							printExpr(method.body) + "\n}"
 			}
 							
-			name + init + exprs + methods.mkString("\n") + "\n}\n"
+			name + fields + init + exprs + methods.mkString("\n") + "\n}\n"
 		}
 		classes.mkString("\n")+"\n"
 	}
 	
+	private def printFields(vars: List[IRVar]) : String = {
+		val fields = for(v <- vars) yield {
+			printType(v.tpe) + v.name + ";"
+		}
+		fields.mkString("\n")
+	}
 	private def printParams(params: List[IRVar]) : String = {
 		val argsAux = for(arg <- params) yield{
 			printType(arg.tpe) + arg.name + ","
@@ -98,7 +115,7 @@ class Compile(file: String){
 			case IRNotVar(v) => "not " + v.name + ";"
 			case IRLabel(l) => l+":"
 			case IRIF(c, g) => "if not " + c.value.name + " goto " + g.l
-			case WhileIf(c, g) => "if " + c.name + " goto " + g.l
+			case IRWhileIf(c, g) => "if " + c.name + " goto " + g.l
 			case IRGoto(l) => "goto " + l.l + ";"
 			case IRPrint(v) => "System.out.println(" + v.name + ");"
 			case IRCall(c, m, args, _) => c + "." + m + "(" + printArgs(args) + ");"

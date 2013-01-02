@@ -90,7 +90,8 @@ class TypeChecker(expr: Expression, scope: Scope,
 							case Some(clazz) =>
 								clazz.getMethod(m) match{
 									case Some(method) =>
-										if(method.mod == ClassMod) error("Method " + m + " is an instance method", pos)
+										if(method.mod != ClassMod) 
+											error("Method " + m + " is an instance method", pos)
 										if(getArgsTypes(args) != getParamsTypes(method.args))
 											error("Invalid argument type", pos)
 										method.tpe
@@ -159,8 +160,8 @@ class TypeChecker(expr: Expression, scope: Scope,
 			case Sub if(t1 == INT && t2 == INT) => INT
 			case Mul if(t1 == INT && t2 == INT) => INT
 			case Div if(t1 == INT && t2 == INT) => INT
-			case Eq => Bool
-			case Neq => Bool
+			case Eq if(t1 == t2) => Bool
+			case Neq if(t1 == t2)=> Bool
 			case Gt if(t1 == INT && t2 == INT) => Bool
 			case Lt if(t1 == INT && t2 == INT) => Bool
 			case Mod if(t1 == INT && t2 == INT) => INT

@@ -191,9 +191,10 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 			if(tpe != Void) expr = Seq(expr, reduceReturn, pos)
 			methods = MMethod(mod, name, tpe, params, pos, expr, Map.empty) :: methods
 			reduce(CloseBrace)
+			mthd = mthd + (cname.name -> methodsString)
 		}
 		// methods = methods.reverse
-		mthd = mthd + (cname.name -> methodsString)
+		
 		methods
 	}
 	
@@ -252,7 +253,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 							val args = argsList
 							(expr1, expr2) match {
 								case (a: ClassName, b: Var) => {
-									mthd(a.name).contains(b) match {
+									mthd(a.name).contains(b.name) match {
 										case true => StaticCall(a, b.name, args, pos)
 										case false => error(pos)
 									}
