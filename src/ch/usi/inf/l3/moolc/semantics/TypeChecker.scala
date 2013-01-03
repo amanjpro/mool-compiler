@@ -52,10 +52,10 @@ class TypeChecker(expr: Expression, scope: Scope,
 			case While(e1, e2, pos) =>
 				check(typeCheck(e1), Bool, pos)
 				typeCheck(e2)
-			case CT(_, e2, pos) => 
+			case CT(e1, e2, pos) => 
 				val t1 = typeCheck(e2)
 				check(t1, Bool, pos)
-				Bool
+				typeCheck(e1)
 			case Condition(c, t, f, pos) =>
 				check(typeCheck(c), Bool, pos)
 				typeCheck(t)
@@ -125,7 +125,7 @@ class TypeChecker(expr: Expression, scope: Scope,
 							error("Invalid argument type", pos)
 				}
 				c
-			case _: RT => Void
+			case RT(e, _) => typeCheck(e)
 			case x: ClassName => x
 			case x: Constant => getConstantType(x)
 			case Empty => Void

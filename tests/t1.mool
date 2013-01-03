@@ -10,7 +10,7 @@ class Test() {
   }
 
   method int m(x: int) {
-		var r: int = this.pow(3, x);
+		var r: int = this.pow(CT(3, true), x);
 		return r;
   }
 	

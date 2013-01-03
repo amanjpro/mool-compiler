@@ -39,7 +39,7 @@ int temp_8;
 temp_8 = 0;
 boolean temp_9;
 temp_9 = n != temp_8;
-if not temp_9 goto L1155208113
+if not temp_9 goto L1193421098
 int temp_10;
 temp_10 = 1;
 int temp_11;
@@ -49,12 +49,12 @@ temp_12 = this.pow(temp_11, m);
 int temp_13;
 temp_13 = m * temp_12;
 result = temp_13;
-goto L183102664;
-L1155208113:
+goto L331131106;
+L1193421098:
 int temp_14;
 temp_14 = 1;
 result = temp_14;
-L183102664:
+L331131106:
 return result;
 
 }
