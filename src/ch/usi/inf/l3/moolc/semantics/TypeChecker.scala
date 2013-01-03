@@ -64,7 +64,15 @@ class TypeChecker(expr: Expression, scope: Scope,
 				check(typeCheck(expr), Str, pos)
 				Void
 			case IsCT(e, pos) => Bool
-
+			case This(c, m, args, pos) =>
+				val clazz = pgm.getClass(c).get
+				clazz.getMethod(m) match {
+					case Some(method) => 
+						if(getArgsTypes(args) != getParamsTypes(method.args))
+							error("Invalid argument type", pos)
+						method.tpe
+					case _ => error("Invalid method name " + m, pos)
+				}
 			case DynamicCall(o, m, args, pos) =>
 				val to = scope.getType(o)
 				to match {

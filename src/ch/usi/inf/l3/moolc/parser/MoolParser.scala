@@ -42,7 +42,7 @@ import _root_.ch.usi.inf.l3.moolc.ast._
  *
  * e = v										# constant value
  *   | x										# variable
- *   | this									# self-reference //not implemented
+ *   | this									# self-reference
  *   | C										# class name
  *   | var x: type = e			# variable declaration
  *   | x = e								# assignment
@@ -67,6 +67,8 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 	// 	private var tokens: List[(Token, Int)] = Nil
 	private var classes: List[String] = Nil
 	private var mthd: Map[String, List[String]] = Map.empty
+	
+	private var currentClass: Option[ClassName] = None
 	
 	private def findClassNames: Unit ={
 		var i = 0
@@ -98,6 +100,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 			reduce(Word(Keywords.Class))
 			val (_, p2) = tokens.head
 			val cname = ClassName(reduce(), p2)
+			currentClass = Some(cname)
 			cname :: classes
 			val params = paramsList()
 			reduce(OpenBrace)
@@ -226,6 +229,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 				case Word(Keywords.New) => reduceNew
 				case Word(Keywords.Return) => Empty
 				case Word(Keywords.Print) => reducePrint
+				case Word(Keywords.This) => reduceThis
 				case OpenBrace => {
 					reduce(OpenBrace)
 					val seq = stmts()
@@ -284,6 +288,14 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 		else Empty
 	}
 	
+	private def reduceThis(): This = {
+		val (_, pos) = tokens.head
+		reduce(Word(Keywords.This))
+		reduce(Dot)
+		val expr = reduce()
+		val args = argsList
+		This(currentClass.get, expr, args, pos)
+	}
 	private def reduceReturn(): Return = {
 		reduce(Word(Keywords.Return))
 		val (token, pos) = tokens.head
@@ -352,7 +364,9 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 	private def reducePrint(): Print = {
 		val (_, p1) = tokens.head
 		reduce(Word(Keywords.Print))
-		Print(stmt, p1)
+		val prnt = Print(stmt, p1)
+		reduce(Semicolon)
+		prnt
 	}
 	private def reduceInvoke(): Invoke ={
 		val (_, pos) = tokens.head
@@ -455,7 +469,6 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 	}
 	
 	private def error(pos: Pos) = {
-		println(tokens)
 		if(pos.isInstanceOf[Position]){
 			val p = pos.asInstanceOf[Position]
 			throw new Error("in line " + (p.line+1) + ": \n" +

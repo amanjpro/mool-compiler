@@ -42,7 +42,7 @@ import io.Source
  *
  * e = v										# constant value
  *   | x										# variable
- *   | this									# self-reference //not implemented
+ *   | this									# self-reference 
  *   | C										# class name
  *   | var x: type = e			# variable declaration
  *   | x = e								# assignment
@@ -65,7 +65,7 @@ import io.Source
 object Keywords extends Enumeration {
 	type Keywords = Value
 	val Class, Method, Var, Init, Static, If, Then, Else, While, Do, New,
-		Invoke, CT, RT, IsCT, Str, Numb, Bool, Void, Return, Print = Value
+		Invoke, CT, RT, IsCT, Str, Numb, Bool, Void, Return, Print, This = Value
 }
 
 object Operators extends Enumeration {
@@ -270,6 +270,7 @@ class Lexer(file: String) {
 						case "void" => Word(Keywords.Void)
 						case "return" => Word(Keywords.Return)
 						case "print" => Word(Keywords.Print)
+						case "this" => Word(Keywords.This)
 						case _ => {
 							try {
 								ValInt(word.toInt)

@@ -120,7 +120,7 @@ class IntermediateCode(pgm: Program) {
 				val l2 = stmtAux(e2, l1)
 				val vr2 = getLastVar
 				val vr3 = IRVar(getNewTemp(), findType(op, vr1, vr2))
-				val binary = IRBinary(vr3, vr2, op, vr1)
+				val binary = IRBinary(vr3, vr1, op, vr2)
 				lastVar = vr3
 				binary :: vr3 :: l2
 			case Condition(c, t, f, _) =>
@@ -154,6 +154,8 @@ class IntermediateCode(pgm: Program) {
 			case DynamicCall(o, m, args, _) => 
 				processCall((o.tpe.asInstanceOf[ClassName]).name, m, 
 																										args, list, false, o.name)
+			case This(c, m, args, _) =>
+				processCall(c.name, m, args, list, false, "this")
 			case Invoke(e, m, args, _) =>
 				val l2 = stmtAux(e, list)
 				val cc = getLastVar
@@ -259,14 +261,20 @@ class IntermediateCode(pgm: Program) {
 			getLastVar
 		}
 		irArgs.reverse
-		val v = IRVar(getNewTemp, getReturnType(ClassName(c, NoPosition), m))
 		var call = isStatic match {
 			case true => IRCall(c, m, irArgs, isStatic)
 			case false => IRCall(obj, m, irArgs, isStatic)
 		}
-		val assign = IRAssignCall(v, call)
-		lastVar = v
-		assign :: v :: l1
+		val tpe = getReturnType(ClassName(c, NoPosition), m)
+		if(tpe != IRVoid){
+			val v = IRVar(getNewTemp, tpe)
+			val assign = IRAssignCall(v, call)
+			lastVar = v
+			assign :: v :: l1
+		}
+		else {
+			call :: l1
+		}
 	}
 	
 	private def getReturnType(c: ClassName, m: String): IRType = {

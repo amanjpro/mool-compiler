@@ -107,7 +107,8 @@ case class MMethod(mod: Modifier, name: String, tpe: Types,
 	override def hashCode(): Int = name.hashCode
 }
 
-case class MClassBody(val vars: List[Var], val const: Expression, val methods: List[MMethod]) {}
+case class MClassBody(val vars: List[Var], val const: Expression, 
+																	val methods: List[MMethod]) {}
 
 sealed abstract class Modifier {}
 
@@ -173,6 +174,7 @@ case class Condition(cond: Expression, tbranch: Expression, fbranch: Expression,
 case class While(cond: Expression, body: Expression, pos: Pos) extends Expression {}
 case class StaticCall(clazz: ClassName, method: String, args: List[Expression], pos: Pos) extends Expression {}
 case class DynamicCall(obj: Var, method: String, args: List[Expression], pos: Pos) extends Expression {}
+case class This(clazz: ClassName, method: String, args: List[Expression], pos: Pos) extends Expression {}
 case class Invoke(cName: Expression, mName: Expression, args: List[Expression], pos: Pos) extends Expression {}
 case class New(cName: ClassName, args: List[Expression], pos: Pos) extends Expression {}
 case class CT(expr1: Expression, expr2: Expression, pos: Pos) extends Expression {}

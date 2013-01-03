@@ -1,0 +1,28 @@
+class Test{
+
+Test(){
+
+
+}
+static void main(){
+String temp_0;
+temp_0 = "Test";
+String temp_1;
+temp_1 = "call";
+int temp_2;
+temp_2 = 1;
+int temp_3;
+temp_3 = 2;
+invoke(temp_0, temp_1, temp_2, temp_3);
+
+}
+static int call(int b, int c){
+int d;
+int temp_4;
+temp_4 = c + b;
+d = temp_4;
+return d;
+
+}
+}
+

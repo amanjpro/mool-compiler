@@ -25,6 +25,7 @@ import semantics._
 import parser._
 import ir._
 import codegen._
+import evaluator._
 import java.io._
 
 class Compile(file: String){
@@ -34,6 +35,8 @@ class Compile(file: String){
 		val parser = new Parser(lexer.lines, lexer.getTokens)
 		val ast = parser.start
 		new SymbolTableChecker(ast, lexer.lines).start
+		//val eval = new Evaluator(ast)
+		// eval.start()
 		val pgm = new IntermediateCode(ast).start
 		val path = new File(file).getParent
 		printToFile(printIR(pgm), file + ".ir")

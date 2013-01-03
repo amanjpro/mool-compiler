@@ -239,9 +239,15 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 				val caller = s match{
 					case true => c
 					case false => 
-						val tpe = findVarType(exrps, c).asInstanceOf[IRObject]
-						loadVar(clazz, mw, IRVar(c, tpe), map)
-						tpe.clazz
+						if(c == "this"){
+							mw.visitVarInsn(ALOAD, 0)
+							clazz.name
+						}
+						else {
+							val tpe = findVarType(exrps, c).asInstanceOf[IRObject]
+							loadVar(clazz, mw, IRVar(c, tpe), map)
+							tpe.clazz
+						}
 				}
 				val method = pgm.getClass(caller).get.getMethod(m).get
 				val tpe = getBytecodeMethodType(method.args, method.tpe)
@@ -374,6 +380,7 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 					mv.visitLdcInsn(x);
 					mv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName", 
 																		"(Ljava/lang/String;)Ljava/lang/Class;");
+				case _ => 
 			}
 			mv.visitInsn(AASTORE);
 			i += 1
@@ -399,6 +406,7 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 				case IRBool =>
 					mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", 
 										"(Z)Ljava/lang/Boolean;");
+				case _ =>
 			}
 			mv.visitInsn(AASTORE);
 			temp = temp.tail

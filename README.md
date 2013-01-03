@@ -35,7 +35,7 @@ The semantics of the language:
  *
  * e = v										# constant value
  *   | x										# variable
- *   | this									# self-reference //not implemented
+ *   | this									# self-reference
  *   | C										# class name
  *   | var x: type = e			# variable declaration
  *   | x = e								# assignment

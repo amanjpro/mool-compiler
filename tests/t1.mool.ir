@@ -1,0 +1,62 @@
+class Test{
+
+Test(){
+
+
+}
+static void main(){
+Test t;
+Test temp_0;
+temp_0 = new Test();
+t = temp_0;
+String temp_1;
+temp_1 = "";
+int temp_2;
+temp_2 = 3;
+int temp_3;
+temp_3 = t.m(temp_2);
+String temp_4;
+temp_4 = temp_1 + temp_3;
+System.out.println(temp_4);
+
+}
+int m(int x){
+int r;
+int temp_5;
+temp_5 = 3;
+int temp_6;
+temp_6 = this.pow(temp_5, x);
+r = temp_6;
+return r;
+
+}
+int pow(int n, int m){
+int result;
+int temp_7;
+temp_7 = 0;
+result = temp_7;
+int temp_8;
+temp_8 = 0;
+boolean temp_9;
+temp_9 = n != temp_8;
+if not temp_9 goto L1155208113
+int temp_10;
+temp_10 = 1;
+int temp_11;
+temp_11 = n - temp_10;
+int temp_12;
+temp_12 = this.pow(temp_11, m);
+int temp_13;
+temp_13 = m * temp_12;
+result = temp_13;
+goto L183102664;
+L1155208113:
+int temp_14;
+temp_14 = 1;
+result = temp_14;
+L183102664:
+return result;
+
+}
+}
+

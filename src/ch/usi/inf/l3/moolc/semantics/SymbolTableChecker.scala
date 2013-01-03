@@ -60,7 +60,8 @@ class SymbolTableChecker(pgm: Program, lines: Array[String]) {
 	}
 	
 	// this method does not check against method calls and field selections:
-	// StaticCall, DynamicCall, Invoke, New should be checked separately too
+	// StaticCall, DynamicCall, Invoke, This and New should be 
+	// checked separately too
 	private def symbolTableCheckExpr(expr: Expression, scope: Scope): Scope = {
 		expr match {
 			case v1 @ Var(_, _, _, false) => 
@@ -96,6 +97,9 @@ class SymbolTableChecker(pgm: Program, lines: Array[String]) {
 				scope
 			case DynamicCall(v, _, args, _) => 
 				symbolTableCheckExpr(v, scope)
+				for(arg <- args) symbolTableCheckExpr(arg, scope)
+				scope
+			case This(_, _, args, _) =>
 				for(arg <- args) symbolTableCheckExpr(arg, scope)
 				scope
 			case Invoke(e1, e2, args, _) =>

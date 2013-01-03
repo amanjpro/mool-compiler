@@ -1,13 +1,22 @@
 class Test() {
-  method pow(n,m) { 
-    if (n=0) 
-        1;
-    else
-        m*this.pow(n-1,m);
+	method int pow(n: int, m: int) { 
+    var result: int = 0;
+    if n != 0 then{
+			result = m * this.pow(n-1, m);
+		}else{
+			result = 1;
+		}
+		return result;
   }
 
-  static main(x) {
-    this.pow(CT(3), x);
+  method int m(x: int) {
+		var r: int = this.pow(3, x);
+		return r;
   }
+	
+	static void main() {
+		var t: Test = new Test();
+		print "" + t.m(3);
+	}
 }
 
