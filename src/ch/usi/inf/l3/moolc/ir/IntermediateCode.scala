@@ -110,7 +110,7 @@ class IntermediateCode(pgm: Program) {
 								IRAssignCall(_, _) |
 								IRAssignNew(_, _) |
 								IRBinary(_, _, _, _)=> IRAssignVar(vr, getLastVar) :: l2
-					case _ => throw new Error("Should not happen" + l2.head)
+					case _ => throw new Error("Should not happen " + l2.head)
 				}
 			case Seq(e1, e2, _) => stmtAux(e2, stmtAux(e1, list))
 			case Binary(ob, e1, e2, _) => 
@@ -193,7 +193,7 @@ class IntermediateCode(pgm: Program) {
 				val l1 = stmt(e)
 				val v = getLastVar
 				(IRReturn(v) :: l1) ::: list
-			case Empty | Semi | ClassName(_, _) => list
+			case Empty | Semi | ClassName(_, _) | ObjectValue(_)=> list
 		}
 	}
 	

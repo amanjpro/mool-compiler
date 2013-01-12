@@ -26,7 +26,8 @@ import _root_.ch.usi.inf.l3.moolc.lexer._
 class SymbolTableChecker(pgm: Program, lines: Array[String]) {
 	
 	def start() = symboleTableCheck
-	
+	private var currentClassScope: Scope = null
+	private var isStaticMethod = false
 	private def symboleTableCheck() = {
 		checkDuplicateClass
 		for(clazz <- pgm.classes) symbolTableCheckClass(clazz)
@@ -36,9 +37,12 @@ class SymbolTableChecker(pgm: Program, lines: Array[String]) {
 		val scope = new ClassScope(lines)
 		val impl = clazz.body
 		for(v <- impl.vars) scope.addVar(v)
+		currentClassScope = scope
+		isStaticMethod = false
 		symbolTableCheckInit(clazz, impl.const, scope.getNestedScope)
 		val methods = impl.methods
 		for(method <- methods) {
+			isStaticMethod = method.mod == ClassMod
 			scope.addMethod(method)
 			val mscope = scope.getNestedScope
 			for(param <- method.args) mscope.addVar(param)
@@ -65,6 +69,10 @@ class SymbolTableChecker(pgm: Program, lines: Array[String]) {
 	private def symbolTableCheckExpr(expr: Expression, scope: Scope): Scope = {
 		expr match {
 			case v1 @ Var(_, _, _, false) => 
+				if(isStaticMethod && currentClassScope.hasVar(v1)) {
+					error("Variable " + v1.name + " is static cannot be accessed within " +
+						 			" an instance method", v1.pos)
+				}
 				v1.tpe = scope.getType(v1)
 				scope
 			case v2 @ Var(_, _, _, true) => 
@@ -99,7 +107,10 @@ class SymbolTableChecker(pgm: Program, lines: Array[String]) {
 				symbolTableCheckExpr(v, scope)
 				for(arg <- args) symbolTableCheckExpr(arg, scope)
 				scope
-			case This(_, _, args, _) =>
+			case This(_, _, args, pos) =>
+				if(isStaticMethod) {
+					error("Cannot access `this` in a static context", pos)
+				}
 				for(arg <- args) symbolTableCheckExpr(arg, scope)
 				scope
 			case Invoke(e1, e2, args, _) =>
@@ -113,9 +124,9 @@ class SymbolTableChecker(pgm: Program, lines: Array[String]) {
 			case RT(e, _) => symbolTableCheckExpr(e, scope)
 			case IsCT(e, _) => symbolTableCheckExpr(e, scope)
 			case c @ ClassName(n, ps) => {
-				pgm.classes.contains(MClass(c, Nil, null, NoPosition, Map.empty)) match{
-					case true => scope
-					case false => error("Class " + n + " is not defined", ps)
+				pgm.getClass(c) match{
+					case Some(x) => scope
+					case None => error("Class " + n + " is not defined", ps)
 				}
 			}
 			case Return(e, _) => symbolTableCheckExpr(e, scope)

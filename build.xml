@@ -37,6 +37,8 @@
 	
 	<!-- set global properties for the build -->
 	<property environment="env"/>
+	<property name="scalac.jvmargs"
+		  value="${env.ANT_OPTS} ${jvm.opts} -Dscalac.patmat.analysisBudget=off"/>
 	<property name="scala.home" value="${env.SCALA_HOME}"/>
 	<property name="project" value="moolc"/>
 	<property name="version" value="1.0"/>
@@ -71,9 +73,9 @@
 	
 	<target name="build" depends="clean, init">
 		<mkdir dir="${build}"/>
-		<scalac srcdir="${src}" unchecked="yes"  deprecation="yes"
-						destdir="${build}" classpathref="build.classpath"
-						addparams="-Dscalac.patmat.analysisBudget=off">
+		<scalac srcdir="${src}"  unchecked="on" deprecation="on"
+			destdir="${build}" classpathref="build.classpath"
+			jvmargs="${scalac.jvmargs}">
 			<include name="**/*.scala" />
 			<exclude name="forget/**/*.scala" />
 		</scalac>

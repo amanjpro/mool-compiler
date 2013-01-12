@@ -28,16 +28,21 @@ import codegen._
 import evaluator._
 import java.io._
 
-class Compile(file: String){
+class Compile(file: String, pe: Boolean){
 	private def start: Unit = {
 		val lexer = new Lexer(file)
 		lexer.start
 		val parser = new Parser(lexer.lines, lexer.getTokens)
 		val ast = parser.start
 		new SymbolTableChecker(ast, lexer.lines).start
-		//val eval = new Evaluator(ast)
-		// eval.start()
-		val pgm = new IntermediateCode(ast).start
+		val newPgm = if(pe) {
+			val peval = new PartialEvaluator(ast)
+			peval.start
+		}
+		else {
+			ast
+		}
+		val pgm = new IntermediateCode(newPgm).start
 		val path = new File(file).getParent
 		printToFile(printIR(pgm), file + ".ir")
 		new BytecodeGenerator(pgm, path).start
@@ -158,8 +163,17 @@ class Compile(file: String){
 object Compile {
 	
 	def main(args: Array[String]) = {
-		if(args.length != 1 && args(0).endsWith("mool")) 
-			println("Usage: Parser filname.mool")
-		new Compile(args(0)).start
+		var optimize = false
+		if(args.length == 1 && !args(0).endsWith("mool")) {
+			println("Usage: ./moolc.sh [options] filname.mool")
+			System.exit(1)
+		}
+		else if(args.length == 2 && (!args(1).endsWith("mool") ||
+																	args(0) != "-pe")) {
+			println("Usage: ./moolc.sh [options] filname.mool")
+			System.exit(1)
+		}
+		if(args.length == 2) new Compile(args(1), true).start
+		else new Compile(args(0), false).start
 	}
 }

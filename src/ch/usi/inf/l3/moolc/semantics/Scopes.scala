@@ -35,6 +35,10 @@ abstract class Scope {
 		}
 	}
 	
+	def hasVar(v: Var): Boolean = {
+		envVar.contains(v.name)
+	}
+	
 	def getType(v: Var): Types = {
 		val tpe = envVar.get(v.name) 
 		tpe match {

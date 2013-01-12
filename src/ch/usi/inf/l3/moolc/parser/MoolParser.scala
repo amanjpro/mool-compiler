@@ -109,9 +109,9 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 			val methods = defs(cname)
 			reduce(CloseBrace)
 			val body = new MClassBody(vars, init, methods)
-			classList = new MClass(cname, params, body, p1, Map.empty) :: classList
+			classList = new MClass(cname, params, body, p1) :: classList
 		} 
-		new Program(classList, Map.empty)
+		new Program(classList)
 	}
 	
 	private def argsList(): List[Expression] = {
@@ -192,7 +192,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 			reduce(OpenBrace)
 			expr = stmts()
 			if(tpe != Void) expr = Seq(expr, reduceReturn, pos)
-			methods = MMethod(mod, name, tpe, params, pos, expr, Map.empty) :: methods
+			methods = MMethod(mod, name, tpe, params, pos, expr) :: methods
 			reduce(CloseBrace)
 			mthd = mthd + (cname.name -> methodsString)
 		}
@@ -326,7 +326,7 @@ class Parser(lines: Array[String], tkns: List[(Token, Pos)]) {
 		}
 	}
 	
-	private def reduceNew: New = {
+	private def reduceNew(): New = {
 		val (_, p1) = tokens.head
 		reduce(Word(Keywords.New))
 		val (_, p2) = tokens.head

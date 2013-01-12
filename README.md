@@ -9,9 +9,13 @@ To compile the compiler:
 2- Open the terminal and write
 	ant jar
 	
-And to run the mool compiler:
-1- Open the terminal and write:
+And to run the mool compiler, without running the partial evaluator, 
+open the terminal and write:
 	./mool.sh path/to/the/file.mool
+
+In order to run the compiler with the partial evaluator (namely HPE), open
+the terminal and write:
+	./mool.sh -pe path/to/the/file.mool
 	
 The semantics of the language:
 

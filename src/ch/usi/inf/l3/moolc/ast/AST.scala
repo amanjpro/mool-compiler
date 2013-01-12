@@ -19,6 +19,8 @@
 
 package ch.usi.inf.l3.moolc.ast
 
+import _root_.ch.usi.inf.l3.moolc.evaluator._
+
 sealed abstract class Pos {}
 case class Position(col: Int, line: Int) extends Pos{
 	require(col >= 0)
@@ -26,12 +28,13 @@ case class Position(col: Int, line: Int) extends Pos{
 }
 case object NoPosition extends Pos {}
 
-sealed trait Premitive {
+sealed trait Premitive extends Data {
 	type A
 	def optionValue: Option[A]
 }
 
-sealed trait Value
+sealed trait Data {}
+sealed trait Value extends Data {}
 
 case object Null extends Premitive with Value{
 	type A = Nothing
@@ -53,16 +56,17 @@ case class MBool(value: Boolean) extends Premitive with Value{
 	def optionValue = Some(value)
 }
 	
+/**
+ * MObject should have an env, and I think it is better if they actually have
+ * store, that way I save lots of headaches.
+ */
+case class MObject(clazz: ClassName, store: Store) extends Value {}
 
-case class MObject(clazz: MClass, var env: Map[Var, Value]) extends Value {}
 
 
+sealed abstract class Block {}
 
-sealed abstract class Block {
-	var env: Map[Var, Value]
-}
-
-case class Program(classes: List[MClass], var env: Map[Var, Value]) extends Block {
+case class Program(var classes: List[MClass]) extends Block {
 	def getClass(name: ClassName): Option[MClass] = {
 		getClassAux(name, classes)
 	}
@@ -75,7 +79,8 @@ case class Program(classes: List[MClass], var env: Map[Var, Value]) extends Bloc
 	}
 }
 
-case class MClass (name: ClassName, args: List[Var], body: MClassBody, pos: Pos, var env: Map[Var, Value]) extends Block {
+case class MClass (name: ClassName, args: List[Var], body: MClassBody, 
+						pos: Pos) extends Block {
 	
 	def getMethod(name: String): Option[MMethod] = {
 		getMethodAux(name, body.methods)
@@ -97,8 +102,7 @@ case class MClass (name: ClassName, args: List[Var], body: MClassBody, pos: Pos,
 }
 
 case class MMethod(mod: Modifier, name: String, tpe: Types, 
-		args: List[Var], pos: Pos, expr: Expression, 
-			var env: Map[Var, Value]) extends Block{
+		args: List[Var], pos: Pos, expr: Expression) extends Block{
 	override def equals(that: Any): Boolean = {
 		if(that == null || !that.isInstanceOf[MMethod]) false
 		else if (this.name == that.asInstanceOf[MMethod].name) true
@@ -108,7 +112,7 @@ case class MMethod(mod: Modifier, name: String, tpe: Types,
 }
 
 case class MClassBody(val vars: List[Var], val const: Expression, 
-																	val methods: List[MMethod]) {}
+																	var methods: List[MMethod]) {}
 
 sealed abstract class Modifier {}
 
@@ -143,6 +147,16 @@ case class Constant(value: Premitive, pos: Pos) extends Expression {
 	override def equals(that: Any): Boolean = {
 		if(that == null || !that.isInstanceOf[Constant]) false
 		else if (this.value == that.asInstanceOf[Constant].value) true
+		else false
+	}
+	override def hashCode(): Int = value.hashCode
+}
+
+/** This case class is not used for anything but the PE */
+case class ObjectValue(value: MObject) extends Expression {
+	override def equals(that: Any): Boolean = {
+		if(that == null || !that.isInstanceOf[ObjectValue]) false
+		else if (this.value == that.asInstanceOf[ObjectValue].value) true
 		else false
 	}
 	override def hashCode(): Int = value.hashCode

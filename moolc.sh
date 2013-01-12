@@ -1,3 +1,3 @@
 #! /bin/bash
 
-scala dist/moolc.jar ${1}
+scala dist/moolc.jar ${@}

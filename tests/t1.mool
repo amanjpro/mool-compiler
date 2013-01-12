@@ -16,7 +16,10 @@ class Test() {
 	
 	static void main() {
 		var t: Test = new Test();
-		print "" + t.m(3);
+		var k: int = t.m(CT(3, true));
+		var j: int = CT(1 + 2, true);
+		var b: str = "" + k;
+		print b;
 	}
 }
 
