@@ -1,24 +1,24 @@
-class IntObject(d0) {
-  var d;
+class IntObject(d0: int) {
+  var d: int;
   init {
-    d := d0;
+    d = d0;
   }
-  method val() { d; }
+  method int val() { return d; }
 
-  method iftest(a) {
-    var x = CT(3);
-    var y = CT(4);
-    if (a < x) {
-      y := 2 * x;
-      x := 3 + y;
+  method void iftest(a: int) {
+    var x: int = CT(3, true);
+    var y: int = CT(4, true);
+    if a < x then {
+      y = 2 * x;
+      x = 3 + y;
     }
     else
-      x := 5 + y;
+      x = 5 + y;
   }
 
-  static main() {
-    var x = new IntObject(3);
-    x.iftest();
+  static void main() {
+    var x: IntObject = new IntObject(3);
+    x.iftest(CT(6, true));
   }
 }
 

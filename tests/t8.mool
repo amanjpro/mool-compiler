@@ -1,40 +1,39 @@
-class Circle(x0,y0,r0) {
-  var x;
-  var y;
-  var r;
+class Circle(x0: int,y0: int,r0: int) {
+  var x: int;
+  var y: int;
+  var r: int;
   init {
-    x := x0;
-    y := y0;
-    r := r0;
+    x = x0;
+    y = y0;
+    r = r0;
   }
-  method resize(n) { r := n*r; }
+  method void resize(n: int) { r = n*r; }
 }
-class Rectangle(x0,y0,w0,h0) {
-  var x;
-  var y;
-  var w;
-  var h;
+class Rectangle(x0: int,y0: int,w0: int,h0: int) {
+  var x: int;
+  var y: int;
+  var w: int;
+  var h: int;
   init {
-    x := x0;
-    y := y0;
-    w := w0;
-    h := h0;
+    x = x0;
+    y = y0;
+    w = w0;
+    h = h0;
   }
-  method area() { h*w; }
-  method resize(n) {
-    w := n*w;
-    h := n*h;
+  method int area() { 
+		var result: int = h*w;
+		return result;
+	}
+  method void resize(n: int) {
+    w = n*w;
+    h = n*h;
   }
 }
 
 
 class Main() {
-  static main() {
-    var s = this.getShape();
-    s.resize(CT(6));
-  }
-  static getShape() {
-    var c = new Circle(RT(3),RT(5),RT(10));
-    c;
+  static void main() {
+    var s: Circle = new Circle(RT(3), RT(5), RT(10));
+    s.resize(CT(6, true));
   }
 }

@@ -99,6 +99,15 @@ class PartialEvaluator(pgm: Program) {
 	private def getSpecializedMethod(cname: ClassName, method: String,
 								args: List[PEValue], store: Store) : MMethod = {
 		methodBankMap.get(cname.name) match {
+			case None =>
+				val bank = new MethodBank
+				val newName = bank.getMethodName(method)
+				methodBankMap = methodBankMap + (cname.name -> bank)
+				val specializedMethod = specializeMethod(newName, cname, 
+																											method, args, store)
+				bank.add(method, args, specializedMethod)
+				//methodBankMap = methodBankMap + (cname.name -> bank)
+				specializedMethod
 			case Some(bank) =>
 				bank.getOption(method, args) match{
 					case Some(x) => x
@@ -109,15 +118,7 @@ class PartialEvaluator(pgm: Program) {
 						bank.add(method, args, specializedMethod)
 						methodBankMap = methodBankMap + (cname.name -> bank)
 						specializedMethod
-				}
-			case _ =>
-				val bank = new MethodBank
-				val newName = bank.getMethodName(method)
-				val specializedMethod = specializeMethod(newName, cname, 
-																											method, args, store)
-				bank.add(method, args, specializedMethod)
-				methodBankMap = methodBankMap + (cname.name -> bank)
-				specializedMethod
+				}	
 		}
 	}
 	private def getSpecializedClass(cname: ClassName, 
@@ -168,6 +169,7 @@ class PartialEvaluator(pgm: Program) {
 	}
 	
 	private def allCT(list: List[PEValue]) = {
+		if(list == Nil) false
 		var test = true
 		var temp = list
 		while(temp != Nil && test){
@@ -179,18 +181,15 @@ class PartialEvaluator(pgm: Program) {
 		test
 	}
 	private def hasCT(list: List[PEValue]) = {
-		if(list == Nil) true
-		else{
-			var test = false
-			var temp = list
-			while(temp != Nil && !test){
-				temp.head match{
-					case CTValue(x) => test = true
-					case _ => temp = temp.tail
-				}
+		var test = false
+		var temp = list
+		while(temp != Nil && !test){
+			temp.head match{
+				case CTValue(x) => test = true
+				case _ => temp = temp.tail
 			}
-			test
 		}
+		test
 	}
 	
 	
@@ -269,7 +268,7 @@ class PartialEvaluator(pgm: Program) {
 				ObjectValue(MObject(cname, newStore))
 			case Return(expr, _) => feval(expr, store)
 			case Empty | Semi => Empty
-			case _ => throw new Error("Print, CT, RT, and IsCT cannot appear here")
+			case _ => throw new Error(expr + "  Print, CT, RT, and IsCT cannot appear here")
 		}
 	}
 	/**
@@ -384,7 +383,7 @@ class PartialEvaluator(pgm: Program) {
 				val (cprime, p1) = peval(c, store)
 				p1 match{
 					case CTValue(Constant(MBool(true), _)) => peval(Seq(body, 
-															While(cprime, body, NoPosition), NoPosition), store)
+															While(c, body, NoPosition), NoPosition), store)
 					case CTValue(Constant(MBool(false), _)) => peval(Empty, store)
 					case _ => 
 						val r = checkStore(store, loop, c, body)

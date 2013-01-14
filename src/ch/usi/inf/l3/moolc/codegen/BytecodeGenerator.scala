@@ -37,7 +37,10 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 	
 	private def writeClass(clazz: IRClass) = {
 		val cw = new ClassWriter(ClassWriter.COMPUTE_MAXS)
-		cw.visit(V1_5, ACC_PUBLIC, clazz.name, null, "java/lang/Object", null)
+		val directParent = if(clazz.name.contains("_")){
+			clazz.name.substring(0, clazz.name.indexOf("_"))
+			} else "java/lang/Object"
+		cw.visit(V1_5, ACC_PUBLIC, clazz.name, null, directParent, null)
 		clazz.vars.foreach(writeField(cw, _))
 		writeConstructor(cw, clazz.args, clazz, clazz.const)
 		clazz.methods.foreach(writeMethod(cw, _, clazz))
@@ -184,6 +187,8 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 				}
 				
 			case IRBinary(e1, e2, op, e3) =>
+				if(clazz.vars.contains(e1) && !isInit)
+					mw.visitVarInsn(ALOAD, 0)
 				(op, e2.tpe, e1.tpe) match {
 					case (IROp.Add, IRStr, _) | (IROp.Add, _, IRStr) =>
 						getBytecodeStrConcat(clazz, mw, e2, e3, map)
@@ -202,15 +207,23 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 				}
 				storeVar(clazz, mw, e1, map)
 			case IRAssignVar(e, v) =>
+				if(clazz.vars.contains(e) && !isInit)
+					mw.visitVarInsn(ALOAD, 0)
 				loadVar(clazz, mw, v, map)
 				storeVar(clazz, mw, e, map)
 			case IRAssignConst(e, c) =>
+				if(clazz.vars.contains(e) && !isInit)
+					mw.visitVarInsn(ALOAD, 0)
 				writeInstruction(clazz, mw, c, map, start, end, exrps)
 				storeVar(clazz, mw, e, map)
 			case IRAssignCall(e, c) => 
+				if(clazz.vars.contains(e) && !isInit)
+					mw.visitVarInsn(ALOAD, 0)
 				writeInstruction(clazz, mw, c, map, start, end, exrps)
 				storeVar(clazz, mw, e, map)
 			case IRAssignNew(e, n) => 
+				if(clazz.vars.contains(e) && !isInit)
+					mw.visitVarInsn(ALOAD, 0)
 				writeInstruction(clazz, mw, n, map, start, end, exrps)
 				storeVar(clazz, mw, e, map)
 			case v @ IRVar(n, tpe) =>
@@ -321,7 +334,8 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 	private def storeVar(clazz: IRClass, mw: MethodVisitor, 
 									v: IRVar, map: Map[IRVar, Int]) = {
 		clazz.vars.contains(v) match{
-			case true => mw.visitFieldInsn(PUTFIELD, clazz.name, v.name, 
+			case true => 
+				mw.visitFieldInsn(PUTFIELD, clazz.name, v.name, 
 																		getBytecodeType(v.tpe))
 			case false => mw.visitVarInsn(getBytecodeStore(v.tpe), map(v))
 		}							

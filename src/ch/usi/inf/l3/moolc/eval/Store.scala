@@ -111,6 +111,7 @@ class MethodBank{
 	}
 	
 	def get(name: String, args: List[PEValue]): MMethod = {
+		println(args)
 		specializedMethods((name, nullify(args)))
 	}
 	

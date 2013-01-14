@@ -172,11 +172,11 @@ class Lexer(file: String) {
 					i = i + 1
 					col += 1
 				}
-				case '<' => 
+				case '>' => 
 					tokens = (Operator(Operators.Gt), Position(col, lnum)) :: tokens
 					i = i + 1
 					col += 1
-				case '>' => 
+				case '<' => 
 					tokens = (Operator(Operators.Lt), Position(col, lnum)) :: tokens
 					i = i + 1
 					col += 1

@@ -1,0 +1,32 @@
+class Main(){
+	static int power(n: int, x: int){
+		var i: int = n;
+		var y: int = 1;
+		var p: int = x;
+		while i > 0 do {
+			var test: int = i % 2;
+			if test == 1 then {
+				y = y * p;
+			}
+			else {
+				y = y;
+			}
+			i = i / 2;
+			if i > 0 then{
+				p = p * p;
+			}
+			else {
+				y = y;
+			}
+		}
+		return y;
+	}
+	static int m(a: int) {
+		var t: int= Main.power(CT(3, true), a);
+		return t;
+	}
+	static void main(){
+		var t: int = Main.m(3);
+		print "" + t;
+	}
+}

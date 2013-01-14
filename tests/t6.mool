@@ -1,24 +1,32 @@
-class Circle(x0,y0,r0) {
-  var x;
-  var y;
-  var r;
+class Circle(x0: int,y0: int,r0: int) {
+  var x: int;
+  var y: int;
+  var r: int;
   init {
-    x := x0;
-    y := y0;
-    r := r0;
+    x = x0;
+    y = y0;
+    r = r0;
   }
-  method area() { 3 * r; }
-  method areaB() { r * this.area(); }
-  method getR() { r; }
-  method doubleR() { r:=r*2; }
+  method int area() { 
+		var result: int = 3 * r;
+		return result; }
+  method int areaB() { 
+		var result: int = r * this.area();
+		return result;
+	}
+  method int getR() { return r; }
+  method int doubleR() { 
+		r=r*2;
+		return r;
+	}
 }
 class Main() {
-  static main() {
-    var c = new Circle(3,5,CT(10));
-    c.area();
-    c.areaB();
+  static void main() {
+    var c: Circle = new Circle(3,5,CT(10, true));
+    print "" + c.area();
+    print "" + c.areaB();
     c.doubleR();
-    var r = c.getR();
-    r;
+    var r: int = c.getR();
+    print "" + r;
   }
 }

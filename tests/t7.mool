@@ -1,23 +1,23 @@
-class Circle(x0,y0,r0) {
-  var x;
-  var y;
-  var r;
+class Circle(x0: int,y0: int,r0: int) {
+  var x: int;
+  var y: int;
+  var r: int;
   init {
-    x := x0;
-    y := y0;
-    r := r0;
+    x = x0;
+    y = y0;
+    r = r0;
   }
-  method move(n) {
-    x := x + n;
-    y := y + n;
+  method void move(n: int) {
+    x = x + n;
+    y = y + n;
   }
 }
 
 class Main() {
-  static main() {
-    var s = new Circle(RT(3),RT(5),CT(10));
-    s.move(CT(6));
-    var s2 = new Circle(RT(0), RT(1), RT(4));
-    s2.move(CT(3));
+  static void main() {
+    var s: Circle = new Circle(RT(3),RT(5),CT(10, true));
+    s.move(CT(6, true));
+    var s2: Circle = new Circle(RT(0), RT(1), RT(4));
+    s2.move(CT(3, true));
   }
 }

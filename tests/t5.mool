@@ -1,17 +1,24 @@
 class Test() {
 
-  method rrppow(n,m) {
-    if (n = 0)
-       1;
-    else if ((n % 2) = 0) {
-        var r = this.rrppow(n / 2, m);
-        r * r;
+  method int rrppow(n: int,m: int) {
+    var result: int = 0;
+		if n == 0 then{
+       result = 1;
+    }
+		else {
+			var nmod: int = n % 2;
+			if nmod == 0 then {
+        var r: int = this.rrppow(n / 2, m);
+        result = r * r;
       }
-    else
-      m * this.rrppow(n - 1, m);
+    	else
+      	result = m * this.rrppow(n - 1, m);
+		}
+		return result;
   }
 
-  static main(x) {
-    this.rrppow(CT(11), x);
+  static void main() {
+		var t: Test = new Test();
+    print "" + t.rrppow(CT(11, true), 5);
   }
 }

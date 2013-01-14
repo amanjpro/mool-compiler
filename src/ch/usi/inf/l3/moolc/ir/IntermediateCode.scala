@@ -44,7 +44,7 @@ class IntermediateCode(pgm: Program) {
 			val classParams = convertVarsToIRVar(clazz.args)
 			val methods = for(method <- clazz.body.methods) yield {
 				val params = convertVarsToIRVar(method.args)
-				val exprs = removeExtraVars(stmt(method.expr), params ::: classParams)
+				val exprs = removeExtraVars(stmt(method.expr), params ::: classVars)
 				val isStatic = method.mod match{
 					case ClassMod => true
 					case InstanceMod => false
