@@ -14,8 +14,12 @@ class Circle(x0: int,y0: int,r0: int) {
 }
 
 class Main() {
+	static Circle factory(){
+		var result: Circle = new Circle(RT(3),RT(5),CT(10, true));
+		return result;
+	}
   static void main() {
-    var s: Circle = new Circle(RT(3),RT(5),CT(10, true));
+    var s: Circle = Main.factory();
     s.move(CT(6, true));
     var s2: Circle = new Circle(RT(0), RT(1), RT(4));
     s2.move(CT(3, true));

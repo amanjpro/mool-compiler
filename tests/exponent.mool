@@ -22,7 +22,7 @@ class Main(){
 		return y;
 	}
 	static int m(a: int) {
-		var t: int= Main.power(CT(3, true), a);
+		var t: int= Main.power(CT(11, true), a);
 		return t;
 	}
 	static void main(){

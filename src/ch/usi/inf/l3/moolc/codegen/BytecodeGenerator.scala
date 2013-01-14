@@ -42,7 +42,7 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 			} else "java/lang/Object"
 		cw.visit(V1_5, ACC_PUBLIC, clazz.name, null, directParent, null)
 		clazz.vars.foreach(writeField(cw, _))
-		writeConstructor(cw, clazz.args, clazz, clazz.const)
+		writeConstructor(cw, clazz.args, clazz, clazz.const, directParent)
 		clazz.methods.foreach(writeMethod(cw, _, clazz))
 		val code = cw.toByteArray()
 		
@@ -53,9 +53,21 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 	
 	private def writeConstructor(cw: ClassWriter, 
 																			args: List[IRVar], clazz: IRClass,
-																							exprs: List[IRExpr]) = {
+																							exprs: List[IRExpr]
+																							, superclass: String) = {
 		
 		isInit = true
+		//If there is no default construcot, create one
+		if(args != Nil) {
+			val mw = cw.visitMethod(ACC_PUBLIC, "<init>", 
+								"()V", null, null)
+			mw.visitCode()
+			mw.visitVarInsn(ALOAD, 0)
+			mw.visitMethodInsn(INVOKESPECIAL, superclass, "<init>", "()V")
+			mw.visitInsn(RETURN)
+			mw.visitMaxs(1, 1)
+			mw.visitEnd
+		}
 		val mw = cw.visitMethod(ACC_PUBLIC, "<init>", 
 							getBytecodeInitType(args), null, null)
 		mw.visitCode();
@@ -66,7 +78,7 @@ class BytecodeGenerator(pgm: IRProgram, dir: String) {
 		//pushes the 'this' variable
 		mw.visitVarInsn(ALOAD, 0)
 		//invokes the super class constructor
-		mw.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", 
+		mw.visitMethodInsn(INVOKESPECIAL, superclass, 
 													"<init>", "()V")
 		// writeParams(mv, method.args, map, start, end, isMain)
 		for(expr <- exprs){

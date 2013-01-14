@@ -170,15 +170,17 @@ class PartialEvaluator(pgm: Program) {
 	
 	private def allCT(list: List[PEValue]) = {
 		if(list == Nil) false
-		var test = true
-		var temp = list
-		while(temp != Nil && test){
-			temp.head match{
-				case CTValue(x) => temp = temp.tail
-				case _ => test = false
+		else{
+			var test = true
+			var temp = list
+			while(temp != Nil && test){
+				temp.head match{
+					case CTValue(x) => temp = temp.tail
+					case _ => test = false
+				}
 			}
+			test
 		}
-		test
 	}
 	private def hasCT(list: List[PEValue]) = {
 		var test = false
