@@ -64,11 +64,17 @@ class Store {
 	
 	private def makeConsistent(ml: Map[Var, PEValue], ms: Map[Var, PEValue]): Unit = {
 		for((k, v) <- ml) {
-			ms.get(k) match{
-				case Some(x) =>
-					if(x == v) add(k, v)
-					else add(k, Bottom)
-				case None => add(k, Bottom)
+			if(v == Top){
+				add(k, Top)
+			}
+			else{
+				ms.get(k) match{
+					case Some(x) =>
+						if(x == v) add(k, v)
+						else if(x == Top) add(k, Top)
+						else add(k, Bottom)
+					case None => add(k, Bottom)
+				}
 			}
 		}
 	}
