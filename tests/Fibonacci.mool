@@ -1,0 +1,28 @@
+class Fibonacci(){
+	init{}
+	method int fib(x: int){
+		var r: int = 0;
+		var t1: bool = x == 0;
+		var t2: bool = x == 1;
+		if t1 then{
+			r = 1;
+		}
+		else {
+			if t2 then {
+				r = 1;
+			}
+			else{
+				var fib1: int = this.fib(x-1);
+				var fib2: int = this.fib(x-2)
+				r =  fib1 + fib2;
+			}
+		}
+		return r;
+	}
+	static void main(){
+		var fibc: Fibonacci = new Fibonacci();
+		var b: int = fibc.fib(CT(25, true));
+		print "" + b;
+	}
+}
+		  

@@ -47,8 +47,9 @@
 	<property name="moolWebpage" value="http://www.it.uu.se/research/upmarc/loci"/>
 
 	<property name="base" value="."/>
-	<property name="src" value="${base}/src"/>
+	<property name="src" value="${base}/src/main/scala"/>
 	<property name="build" value="${base}/build"/>
+  <property name="api" value="${base}/api"/>
 	<property name="dist" value="${base}/dist"/>
 	<property name="main.class" value="ch.usi.inf.l3.moolc.Compile"/>
 	<property name="lib" value="${base}/lib"/>
@@ -60,6 +61,7 @@
 			<pathelement location="${scala-library.jar}" />
 			<pathelement location="${src}"/>
 			<pathelement location="${lib}/asm-all-4.1.jar"/>
+      <pathelement location="${lib}/com.microsoft.z3.jar"/>
 		</path>
 		
 		<taskdef resource="scala/tools/ant/antlib.xml">
@@ -80,7 +82,17 @@
 			<exclude name="forget/**/*.scala" />
 		</scalac>
 	</target>
-	
+  
+  <target name="api" depends="init">
+      <mkdir dir="${api}"/>
+      <scaladoc srcdir="${src}" destdir="${api}"
+        deprecation="yes" unchecked="yes"
+        doctitle="&lt;div&gt;Mool Compiler 0.1&lt;/div&gt;"
+        classpathref="build.classpath">
+          <include name="**/*.scala"/>
+      </scaladoc>
+  </target>
+  
 	<!-- Creating the JAR file -->
 	<target name="jar" depends="build" description="generate the jar file" >
 		<!-- Create the distribution directory -->
@@ -92,6 +104,7 @@
 		  </fileset>
 		</copy>
 	
+    
 		<!-- Put everything in ${build} into the 
 		                    ${project}.jar file -->
 		<jar jarfile="${dist}/${project}.jar" basedir="${build}">

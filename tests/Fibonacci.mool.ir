@@ -1,0 +1,106 @@
+class Fibonacci{
+
+Fibonacci(){
+
+
+}
+int fib_0(){
+int r;
+int temp_0;
+temp_0 = 0;
+r = temp_0;
+boolean t1;
+boolean temp_1;
+temp_1 = false;
+t1 = temp_1;
+boolean t2;
+boolean temp_2;
+temp_2 = false;
+t2 = temp_2;
+int fib1;
+int temp_3;
+temp_3 = 75025;
+fib1 = temp_3;
+int fib2;
+int temp_4;
+temp_4 = 46368;
+fib2 = temp_4;
+int temp_5;
+temp_5 = 121393;
+r = temp_5;
+int temp_6;
+temp_6 = 121393;
+return temp_6;
+
+}
+static void main(){
+Fibonacci fibc;
+Fibonacci temp_7;
+temp_7 = new Fibonacci();
+fibc = temp_7;
+int b;
+int temp_8;
+temp_8 = fibc.fib_0();
+b = temp_8;
+String temp_9;
+temp_9 = "";
+String temp_10;
+temp_10 = temp_9 + b;
+System.out.println(temp_10);
+
+}
+int fib(int x){
+int r;
+int temp_11;
+temp_11 = 0;
+r = temp_11;
+boolean t1;
+int temp_12;
+temp_12 = 0;
+boolean temp_13;
+temp_13 = x == temp_12;
+t1 = temp_13;
+boolean t2;
+int temp_14;
+temp_14 = 1;
+boolean temp_15;
+temp_15 = x == temp_14;
+t2 = temp_15;
+if not t1 goto L1609050736
+int temp_16;
+temp_16 = 1;
+r = temp_16;
+goto L54153281;
+L1609050736:
+if not t2 goto L1768611086
+int temp_17;
+temp_17 = 1;
+r = temp_17;
+goto L1725364275;
+L1768611086:
+int fib1;
+int temp_18;
+temp_18 = 1;
+int temp_19;
+temp_19 = x - temp_18;
+int temp_20;
+temp_20 = this.fib(temp_19);
+fib1 = temp_20;
+int fib2;
+int temp_21;
+temp_21 = 2;
+int temp_22;
+temp_22 = x - temp_21;
+int temp_23;
+temp_23 = this.fib(temp_22);
+fib2 = temp_23;
+int temp_24;
+temp_24 = fib1 + fib2;
+r = temp_24;
+L1725364275:
+L54153281:
+return r;
+
+}
+}
+
