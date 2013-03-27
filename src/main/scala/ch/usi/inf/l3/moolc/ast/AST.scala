@@ -56,11 +56,8 @@ case class MBool(value: Boolean) extends Premitive with Value{
 	def optionValue = Some(value)
 }
 	
-/**
- * MObject should have an env, and I think it is better if they actually have
- * store, that way I save lots of headaches.
- */
-case class MObject(clazz: ClassName, store: Store) extends Value {}
+
+case class MObject(clazz: ClassName, store: ConstraintStore) extends Value {}
 
 
 

@@ -1,9 +1,38 @@
+/*
+ * Mool Compiler, is a toy compiler written in Scala, which compiles programs
+ * written in Mool language to JVM bytecode
+ * Copyright (C) <2012-2013>  Amanj Sherwany <http://wwww.amanj.me>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 package ch.usi.inf.l3.moolc.evaluator
 
 import com.microsoft.z3._
 import scala.language.implicitConversions
 
+/**
+ * A simple class, aims to make working with Java Bindings for Z3 a bit more
+ * Scala-ish!
+ */
+
 class SMTFrontend{
+  
+  /**
+   * Import whatever static is defined in <code>SMTFrontend</code> object!
+   */
   
   import SMTFrontend._
   
@@ -39,8 +68,14 @@ class SMTFrontend{
   
   def check() = solver.Check
   
-  def eval(a: Expr) = solver.Model.Evaluate(a, false)
-  
+  def eval(a: Expr) = {
+    val result = solver.Model.Evaluate(a, false)
+    try { 
+      result.toString.toInt
+    } catch {
+      case e: NumberFormatException => -1
+    }
+  }
   
   def enterScope() = solver.Push
   
@@ -56,7 +91,7 @@ class SMTFrontend{
    * @param b is the variable that needs to be looked up
    * @param pc is the path condition
    */
-  def getValue(b: Expr, pc: BoolExpr) = {
+  def getValue(b: Expr, pc: BoolExpr): Int = {
     // execute the path condition
     execute(pc)
     // is it satisfiable or not
@@ -81,6 +116,39 @@ class SMTFrontend{
         -1
       }
     }
+  }
+  
+  /**
+   * This methods solves the Constraints (several times) for this object, 
+   * and returns all possible solutions.
+   * 
+   * @param b is the variable that needs to be looked for
+   * @param pc is the path condition
+   * @return a list of all possible solutions
+   */
+  def getValues(b: Expr, pc: BoolExpr): List[Int] = {
+    def getVal(pc: BoolExpr): Int = {
+      execute(pc)
+      if(check != SATISFIABLE){
+        -1
+      }else{
+        eval(b)
+      }
+    }
+    
+    def getVals(pc: BoolExpr, list: List[Int]): List[Int] = {
+      getVal(pc) match{
+        case -1 => list
+        case x => 
+          enterScope
+          val expr = not(equ(b, x))
+          val result = getVals(expr, x :: list)
+          leaveScope
+          result
+      }
+    }
+    getVals(pc, Nil)
+    
   }
   
   def dispose() = context.Dispose()

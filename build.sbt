@@ -1,4 +1,4 @@
-name := "Mool Compiler"
+name := "moolc"
 
 version := "1.0"
 

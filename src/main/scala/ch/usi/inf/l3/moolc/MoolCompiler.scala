@@ -36,7 +36,7 @@ class Compile(file: String, pe: Boolean){
 		val ast = parser.start
 		new SymbolTableChecker(ast, lexer.lines).start
 		val newPgm = if(pe) {
-  			val peval = new PartialEvaluator(ast)
+  			val peval = new CBPEvaluator(ast)
   			peval.start
   		}
   		else {
