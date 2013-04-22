@@ -36,3 +36,11 @@
 Icon?
 ehthumbs.db
 Thumbs.db
+
+
+# Build related directories #
+#############################
+dist/
+build/
+api/
+target/

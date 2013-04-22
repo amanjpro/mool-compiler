@@ -1,21 +1,8 @@
 /*
- * Mool Compiler, is a toy compiler written in Scala, which compiles programs
- * written in Mool language to JVM bytecode
- * Copyright (C) <2012-2013>  Amanj Sherwany <http://wwww.amanj.me>
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Copyright (c) <2012-2013>, Amanj Sherwany <http://www.amanj.me>
+ * All rights reserved.
+ * */
+
 
 package ch.usi.inf.l3.moolc.evaluator
 
@@ -35,6 +22,7 @@ import _root_.ch.usi.inf.l3.moolc.ast._
 class CBValue(n: String, constraint: com.microsoft.z3.BoolExpr,
                   values: List[Int]) {
 
+// constraint = (value == 1 && b > 2) || (value == 2 && b <3)
   def this(n: String){
     this(n, null, Nil)
   }
@@ -187,6 +175,11 @@ class CBValue(n: String, constraint: com.microsoft.z3.BoolExpr,
  * 
  * @constructor Takes three parameters, a name of the variable, the index of 
  * the variable and the version of the variable
+ * 
+ * 
+ * TODO SSAVar, should have something like STORE ID, and the store ID should be
+ * Unique per score! (this is for preventing data to be shared between 
+ * two stores?)
  */
 class SSAVar(val nme: String, val index: Int, val version: Int){
   /**
@@ -215,7 +208,7 @@ class SSAVar(val nme: String, val index: Int, val version: Int){
  *  values!)</li>
  * </ul>
  * 
- * Having to Environments from variables to locations, and from locations to
+ * Having two Environments from variables to locations, and from locations to
  * values, guarantees the correctness of the following scenario:
  * {{{
  * class A(var value: Int)
@@ -242,12 +235,12 @@ class SSAVar(val nme: String, val index: Int, val version: Int){
  * @param next the next available variable index for SMT
  */
 
-class ConstraintStore private (varVersions: Map[Var, SSAVar],
-                                env: Map[Var, Int],
-                                memory: Map[Int, CBValue],
-                                memoryMap: Map[Int, PEValue],
-                                location: Int,
-                                next: Int){
+class ConstraintStore private (private val varVersions: Map[Var, SSAVar],
+                                private val env: Map[Var, Int],
+                                private val memory: Map[Int, CBValue],
+                                private val memoryMap: Map[Int, PEValue],
+                                private val location: Int,
+                                private val next: Int){
 
   def this(){
     this(Map.empty, Map.empty, Map.empty, Map.empty, 0, 0)
@@ -255,6 +248,26 @@ class ConstraintStore private (varVersions: Map[Var, SSAVar],
 
   type Location = Int
 
+  // b = "3"
+//   
+//   
+//   else 
+//   
+//   b = "4"
+//   
+//   
+//   if (b.equals("5"))      {b!=null,b.equals("5")}
+//     a = 10        {b.equals("5"),a==10}
+//     f(b)          
+//   else
+//     a = 20        {!b.equals("5"),a==20}
+//     
+//   f(x) {                {x>0}
+//     if (x < 0)
+//       error()           unreachable  
+//     print(x)            ...
+//   }
+  
   /**
   * Creates a nested store for the current store
   */
@@ -445,37 +458,133 @@ class ConstraintStore private (varVersions: Map[Var, SSAVar],
   }
   
   /**
+   * A very important method for handling function calls on objects accurately,
+   *  this makes sure to correctly pass all the parameter values 
+   * (or psudovalues -- aka constraint values) to the called method while
+   * still preserving the store of the object.
+   * 
+   * @param params a list of tuple of method arguments (as a pair of 
+   * expressions and PEValues)
+   * @param sourse the source constraint store, to look for variables
+   * psudovalues from
+   * @return a new store which has all the "possible" informations of its 
+   * parameters
+   * 
+   * 
+   * TODO: RE-THINK ABOUT PASSED PARAMETERS IF THEY WERE EXPRESSIONS. 
+   * you can compute the expressions dependencies, and build more 
+   * constraints for them?
+   */
+  def addEnv(vars: List[((Expression, PEValue), Var)], 
+                      source: ConstraintStore): ConstraintStore = {
+    var tail = vars
+    var tempStore = this
+    while(tail != Nil){
+      val  head = tail.head
+      tail = tail.tail
+      head._1 match{
+        case (x: Var, _) =>
+          val ssa = source.varVersions(x)
+          val l = source.env(x)
+          val cbvalue = source.memory(l)
+          val value = source.memoryMap(l)
+          val loc = tempStore.location+1
+          val nxt = tempStore.next+1
+          tempStore = 
+            new ConstraintStore(tempStore.varVersions + (head._2 -> ssa),
+                                          tempStore.env + (head._2 -> l),
+                                          tempStore.memory + (l -> cbvalue),
+                                          tempStore.memoryMap + (l -> value),
+                                          loc,
+                                          nxt)
+        case (_, x) => tempStore = tempStore.add(head._2, x)
+      }
+    }
+    
+    tempStore
+  }
+  
+  
+  /**
+   * A very important method for handling function calls on objects accurately,
+   *  this makes sure to correctly pass all the parameter values 
+   * (or psudovalues -- aka constraint values) to the called method while
+   * still preserving the store of the object.
+   * 
+   * @param params a list of tuple of method parameters
+   * @param sourse the source constraint store, to look for variables
+   * psudovalues from
+   * @return a new store which has all the "possible" informations of its 
+   * parameters
+   */
+  def addEnvToSelf(vars: List[Var], 
+                      source: ConstraintStore): ConstraintStore = {
+    var tail = vars
+    var tempStore = this
+    while(tail != Nil){
+      val  head = tail.head
+      tail = tail.tail
+      val ssa = source.varVersions(head)
+      val l = source.env(head)
+      val cbvalue = source.memory(l)
+      val value = source.memoryMap(l)
+      val loc = tempStore.location+1
+      val nxt = tempStore.next+1
+      tempStore = new ConstraintStore(tempStore.varVersions + (head -> ssa),
+                                      tempStore.env + (head -> l),
+                                      tempStore.memory + (l -> cbvalue),
+                                      tempStore.memoryMap + (l -> value),
+                                      loc,
+                                      nxt)
+    }
+    
+    tempStore
+  }
+  
+  /**
    * A very important method for handling function calls accurately, this makes
    * sure to correctly pass all the parameter values (or psudovalues -- aka 
    * constraint values) to the called method.
    * 
-   * @param params a list of tuple of method parameters and arguments
+   * @param params a list of tuple of method arguments (as a pair of 
+   * expressions and PEValues)
+   * and parameters
    * @return a new store which has all the "possible" informations of its 
    * parameters
+   * 
+   * 
+   * 
+   * TODO: RE-THINK ABOUT PASSED PARAMETERS IF THEY WERE EXPRESSIONS. 
+   * you can compute the expressions dependencies, and build more 
+   * constraints for them?
    */
-  def newStore(vars: List[(Var, Var)]): ConstraintStore = {
-    var head: (Var, Var) = null
+  def newStore(vars: List[((Expression, PEValue), Var)]): ConstraintStore = {
     var tail = vars
     var tempStore = new ConstraintStore
     var next = -1
     var location = -1
     while(tail != Nil){
-      head = tail.head
+      val head = tail.head
       tail = tail.tail
-      val ssa = varVersions(head._1)
-      val l = env(head._1)
-      val cbvalue = memory(l)
-      val value = memoryMap(l)
-      location = if(location < l) l else location
-      next = if(next < ssa.index) ssa.index else next
-      location+=1
-      next+=1
-      tempStore = new ConstraintStore(varVersions + (head._2 -> ssa),
-                                      env + (head._2 -> l),
-                                      memory + (l -> cbvalue),
-                                      memoryMap + (l -> value),
-                                      location,
-                                      next)
+      head._1 match{
+        case (x: Var, _) =>
+          val ssa = varVersions(x)
+          val l = env(x)
+          val cbvalue = memory(l)
+          val value = memoryMap(l)
+          location = if(location < l) l else location
+          next = if(next < ssa.index) ssa.index else next
+          location+=1
+          next+=1
+          tempStore = 
+            new ConstraintStore(tempStore.varVersions + (head._2 -> ssa),
+                                          tempStore.env + (head._2 -> l),
+                                          tempStore.memory + (l -> cbvalue),
+                                          tempStore.memoryMap + (l -> value),
+                                          tempStore.location,
+                                          tempStore.next)
+        case (_, x) => tempStore = tempStore.add(head._2, x)
+      }
     }
     
     tempStore
